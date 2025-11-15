@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { Button, Switch, Slider, InputNumber, Collapse, message } from "antml:parameter>
+import { Button, Switch, Slider, InputNumber, Collapse, message } from "antd"
 import { EyeOutlined, SaveOutlined } from "@ant-design/icons"
 
 interface TemplatePreviewProps {
