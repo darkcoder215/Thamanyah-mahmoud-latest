@@ -122,16 +122,11 @@ const CustomTemplatesPage: React.FC = () => {
 								<p className="mb-4 text-sm text-gray-600">{template.description}</p>
 								<div className="space-y-2 text-xs text-gray-500">
 									<div>
-										<strong>الأصول:</strong> {Object.keys(template.assets).length}{" "}
-										صورة/أيقونة
-									</div>
-									<div>
-										<strong>حقول البيانات:</strong>{" "}
-										{Object.keys(template.dataFields).length} حقل
-									</div>
-									<div>
 										<strong>تاريخ الإنشاء:</strong>{" "}
 										{new Date(template.createdAt).toLocaleDateString("ar")}
+									</div>
+									<div>
+										<strong>عدد الأحرف:</strong> {template.code.length}
 									</div>
 								</div>
 							</Card>
@@ -168,17 +163,17 @@ const CustomTemplatesPage: React.FC = () => {
 								<h3 className="mb-2 font-semibold">معلومات القالب</h3>
 								<p className="mb-2 text-sm">{previewTemplate.description}</p>
 								<div className="text-xs text-gray-600">
-									<p>عدد الأصول: {Object.keys(previewTemplate.assets).length}</p>
+									<p>عدد الأحرف: {previewTemplate.code.length}</p>
 									<p>
-										حقول البيانات:{" "}
-										{Object.keys(previewTemplate.dataFields).length}
+										تاريخ الإنشاء:{" "}
+										{new Date(previewTemplate.createdAt).toLocaleDateString("ar")}
 									</p>
 								</div>
 							</div>
 
 							<div className="max-h-96 overflow-auto rounded-lg border bg-gray-100 p-4">
-								<pre className="text-xs">
-									<code>{previewTemplate.convertedCode}</code>
+								<pre className="text-xs" style={{ direction: "ltr" }}>
+									<code>{previewTemplate.code}</code>
 								</pre>
 							</div>
 						</div>
