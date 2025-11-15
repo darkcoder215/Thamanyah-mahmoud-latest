@@ -1,21 +1,30 @@
 import { useEffect } from "react"
-import { GoogleOutlined } from "@ant-design/icons"
-import { Alert, Button, Card, message } from "antd"
+import { GoogleOutlined, UserOutlined } from "@ant-design/icons"
+import { Alert, Button, Card, Divider, message } from "antd"
 import { useAuth } from "@/lib/context/AuthContext"
 
 const Login = () => {
 	const [messageApi, contextHolder] = message.useMessage()
 
-	const { signInWithGoogleProvider, loading, error, clearError } = useAuth()
+	const { signInWithGoogleProvider, signInAsGuest, loading, error, clearError } = useAuth()
 
 	useEffect(() => {
+		console.log("🔐 Login component mounted")
 		if (error) {
+			console.error("❌ Login error detected:", error)
 			messageApi.error({ content: error, duration: 4 })
 		}
 	}, [error, messageApi])
 
 	const handleGoogleSignIn = async () => {
+		console.log("🔑 User clicked Google sign-in button")
 		await signInWithGoogleProvider()
+	}
+
+	const handleGuestSignIn = () => {
+		console.log("👤 User clicked guest sign-in button")
+		signInAsGuest()
+		messageApi.success({ content: "تم تسجيل الدخول كضيف", duration: 2 })
 	}
 
 	return (
@@ -32,16 +41,41 @@ const Login = () => {
 						className="mb-4"
 					/>
 				)}
+				<div className="mb-4 text-center">
+					<h2 className="text-xl font-semibold">مرحباً بك</h2>
+					<p className="text-gray-600">سجّل دخولك للمتابعة</p>
+				</div>
+
 				<Button
 					icon={<GoogleOutlined />}
 					onClick={handleGoogleSignIn}
 					loading={loading}
 					block
 					size="large"
-					className="mt-4"
+					type="primary"
 				>
 					سجّل دخولك بواسطة Google
 				</Button>
+
+				<Divider plain>أو</Divider>
+
+				<Button
+					icon={<UserOutlined />}
+					onClick={handleGuestSignIn}
+					loading={loading}
+					block
+					size="large"
+					type="default"
+				>
+					متابعة كضيف
+				</Button>
+
+				<div className="mt-4 rounded bg-blue-50 p-3 text-center text-sm text-blue-800">
+					<p>
+						💡 <strong>نصيحة:</strong> تسجيل الدخول كضيف يتيح لك استخدام جميع الأدوات
+						بدون الحاجة للمصادقة
+					</p>
+				</div>
 			</Card>
 		</div>
 	)

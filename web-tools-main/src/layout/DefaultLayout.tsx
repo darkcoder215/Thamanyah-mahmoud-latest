@@ -18,22 +18,36 @@ const ProtectedLayout = ({
 	onDarkModeToggle: () => void
 }>) => {
 	const pathname = usePathname()
-	const { user, logout, loading } = useAuth()
+	const { user, logout, loading, isGuestMode } = useAuth()
+
 	const handleLogout = async () => {
-		const confirmLogout = window.confirm("هل أنت متأكد أنك تريد تسجيل الخروج؟")
+		console.log("🚪 Logout button clicked")
+		const logoutMessage = isGuestMode
+			? "هل أنت متأكد أنك تريد الخروج من وضع الضيف؟"
+			: "هل أنت متأكد أنك تريد تسجيل الخروج؟"
+		const confirmLogout = window.confirm(logoutMessage)
 		if (confirmLogout) {
+			console.log("✅ User confirmed logout")
 			await logout()
+		} else {
+			console.log("❌ User cancelled logout")
 		}
 	}
 
 	if (loading) {
+		console.log("⏳ Auth loading...")
 		return <></>
 	}
 
 	// If not authenticated, show login
 	if (!user && process.env.NEXT_PUBLIC_PASS_LOGIN !== "true") {
+		console.log("🔒 User not authenticated, showing login screen")
 		return <Login />
 	}
+
+	console.log(
+		`✅ User authenticated: ${user?.email} (Guest mode: ${isGuestMode ? "Yes" : "No"})`,
+	)
 
 	return (
 		<>
@@ -42,6 +56,11 @@ const ProtectedLayout = ({
 					{pathname !== "/dashboard" && pathname !== "/" && (
 						<span className="font-semiBold font-8-sans me-2">
 							أهلاً {user.displayName?.split(" ")[0]} {getGreetingEmoji()}
+							{isGuestMode && (
+								<span className="ms-2 rounded bg-blue-100 px-2 py-1 text-xs text-blue-700">
+									وضع الضيف
+								</span>
+							)}
 						</span>
 					)}
 					<Space className="ms-auto">
@@ -55,7 +74,7 @@ const ProtectedLayout = ({
 								onClick={onDarkModeToggle}
 							/>
 						</Tooltip>
-						<Tooltip title="تسجيل الخروج">
+						<Tooltip title={isGuestMode ? "الخروج من وضع الضيف" : "تسجيل الخروج"}>
 							<Button
 								type="primary"
 								color="danger"
