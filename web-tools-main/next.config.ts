@@ -1,7 +1,10 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-	/* config options here */
+	// Ensure proper routing for client-side navigation
+	trailingSlash: false,
+	// Skip trailing slash redirect to avoid 404s
+	skipTrailingSlashRedirect: true,
 }
 
 export default nextConfig
