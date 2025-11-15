@@ -122,11 +122,12 @@ const CustomTemplatesPage: React.FC = () => {
 								<p className="mb-4 text-sm text-gray-600">{template.description}</p>
 								<div className="space-y-2 text-xs text-gray-500">
 									<div>
-										<strong>تاريخ الإنشاء:</strong>{" "}
-										{new Date(template.createdAt).toLocaleDateString("ar")}
+										<strong>الصور:</strong> {Object.keys(template.assets || {}).length}{" "}
+										صورة
 									</div>
 									<div>
-										<strong>عدد الأحرف:</strong> {template.code.length}
+										<strong>تاريخ الإنشاء:</strong>{" "}
+										{new Date(template.createdAt).toLocaleDateString("ar")}
 									</div>
 								</div>
 							</Card>
@@ -162,7 +163,10 @@ const CustomTemplatesPage: React.FC = () => {
 							<div className="rounded-lg bg-gray-50 p-4">
 								<h3 className="mb-2 font-semibold">معلومات القالب</h3>
 								<p className="mb-2 text-sm">{previewTemplate.description}</p>
-								<div className="text-xs text-gray-600">
+								<div className="space-y-1 text-xs text-gray-600">
+									<p>
+										الصور: {Object.keys(previewTemplate.assets || {}).length} صورة
+									</p>
 									<p>عدد الأحرف: {previewTemplate.code.length}</p>
 									<p>
 										تاريخ الإنشاء:{" "}
@@ -171,7 +175,33 @@ const CustomTemplatesPage: React.FC = () => {
 								</div>
 							</div>
 
+							{Object.keys(previewTemplate.assets || {}).length > 0 && (
+								<div className="rounded-lg border bg-white p-4">
+									<h4 className="mb-2 font-semibold text-sm">الصور المرفوعة</h4>
+									<div className="grid grid-cols-3 gap-2">
+										{Object.entries(previewTemplate.assets).map(
+											([placeholder, url]) => (
+												<div
+													key={placeholder}
+													className="rounded border p-2 text-center"
+												>
+													<img
+														src={url}
+														alt={placeholder}
+														className="mx-auto mb-1 h-16 object-contain"
+													/>
+													<code className="block truncate text-xs text-gray-500">
+														{placeholder}
+													</code>
+												</div>
+											),
+										)}
+									</div>
+								</div>
+							)}
+
 							<div className="max-h-96 overflow-auto rounded-lg border bg-gray-100 p-4">
+								<h4 className="mb-2 font-semibold text-sm">الكود</h4>
 								<pre className="text-xs" style={{ direction: "ltr" }}>
 									<code>{previewTemplate.code}</code>
 								</pre>

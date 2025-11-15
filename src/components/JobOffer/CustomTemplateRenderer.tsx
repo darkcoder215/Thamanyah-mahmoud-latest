@@ -22,10 +22,18 @@ const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 		let html = template.code
 
 		try {
-			// Replace {formData.field} placeholders with actual values
+			// Step 1: Replace asset placeholders with uploaded images
+			console.log("🖼️ Replacing assets...")
+			Object.entries(template.assets).forEach(([placeholder, uploadedUrl]) => {
+				html = html.replace(
+					new RegExp(`src=["']${placeholder}["']`, "g"),
+					`src="${uploadedUrl}"`,
+				)
+			})
+
+			// Step 2: Replace {formData.field} placeholders with actual values
 			console.log("📝 Replacing form data placeholders...")
 
-			// Replace all {formData.fieldName} patterns
 			html = html.replace(/\{formData\.(\w+)\}/g, (match, fieldName) => {
 				const value = formData[fieldName as keyof JobOfferFormData]
 
