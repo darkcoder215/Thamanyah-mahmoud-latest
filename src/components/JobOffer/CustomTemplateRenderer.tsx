@@ -123,8 +123,9 @@ const convertStyleObjectToCSS = (styleContent: string): string => {
 			// Convert camelCase to kebab-case
 			const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase()
 
-			// Add 'px' suffix to numeric values that need it
-			if (needsPxSuffix.includes(key) && /^\d+$/.test(value)) {
+			// Add 'px' suffix to numeric values (including decimals) that need it
+			// Match integers or decimals: 10, 10.5, -10, -10.5
+			if (needsPxSuffix.includes(key) && /^-?\d+(\.\d+)?$/.test(value)) {
 				value = value + 'px'
 			}
 

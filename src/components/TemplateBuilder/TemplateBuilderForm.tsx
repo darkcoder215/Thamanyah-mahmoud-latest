@@ -168,8 +168,9 @@ const TemplateBuilderForm: React.FC<{
 				// Convert camelCase to kebab-case
 				const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase()
 
-				// Add 'px' suffix to numeric values that need it
-				if (needsPxSuffix.includes(key) && /^\d+$/.test(value)) {
+				// Add 'px' suffix to numeric values (including decimals) that need it
+				// Match integers or decimals: 10, 10.5, -10, -10.5
+				if (needsPxSuffix.includes(key) && /^-?\d+(\.\d+)?$/.test(value)) {
 					value = value + 'px'
 				}
 
@@ -243,6 +244,7 @@ const TemplateBuilderForm: React.FC<{
 
 		console.log("🎨 Generating preview HTML...")
 		console.log("📝 Original code length:", html.length)
+		console.log("📝 First 500 chars:", html.substring(0, 500))
 
 		// Step 1: Convert JSX to HTML
 		// Remove import statements
@@ -266,7 +268,11 @@ const TemplateBuilderForm: React.FC<{
 
 		// Convert JSX inline styles style={{...}} to HTML style="..."
 		console.log("🔄 Converting JSX styles to HTML...")
+		const beforeConversion = html.substring(0, 200)
 		html = convertJSXStylesToHTML(html)
+		const afterConversion = html.substring(0, 200)
+		console.log("📊 Before conversion:", beforeConversion)
+		console.log("📊 After conversion:", afterConversion)
 
 		// Remove self-closing tags that aren't valid HTML (except img, br, hr, input)
 		html = html.replace(/<(div|span|p|h1|h2|h3|h4|h5|h6|a|button|section|article|header|footer|nav|main|aside)([^>]*?)\s*\/>/g, "<$1$2></$1>")
@@ -426,9 +432,17 @@ const TemplateBuilderForm: React.FC<{
 
 					<div
 						className="mb-6 rounded border bg-white p-8"
-						style={{ direction: "rtl" }}
+						style={{ direction: "rtl", minHeight: "800px" }}
 						dangerouslySetInnerHTML={{ __html: generatePreviewHTML() }}
 					/>
+
+					{/* Debug info */}
+					<details className="mb-4 text-xs text-gray-600">
+						<summary className="cursor-pointer">عرض HTML المُحوّل (للتطوير)</summary>
+						<pre className="mt-2 max-h-96 overflow-auto rounded bg-gray-100 p-4">
+							{generatePreviewHTML()}
+						</pre>
+					</details>
 
 					<div className="flex gap-2">
 						<Button
