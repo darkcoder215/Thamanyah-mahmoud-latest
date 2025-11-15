@@ -58,10 +58,10 @@ const TemplateBuilderForm: React.FC<{
 
 	const convertJSXStylesToHTML = (html: string): string => {
 		let result = html
-		let searchStart = 0
 
+		// STEP 1: Convert style={{...}} (proper JSX inline styles)
+		let searchStart = 0
 		while (true) {
-			// Find next occurrence of style={{
 			const styleStart = result.indexOf('style={{', searchStart)
 			if (styleStart === -1) break
 
@@ -87,18 +87,29 @@ const TemplateBuilderForm: React.FC<{
 			}
 
 			// Extract the style object content
-			const styleContent = result.substring(styleStart + 8, i) // +8 for 'style={{'
+			const styleContent = result.substring(styleStart + 8, i)
 
 			// Convert to CSS string
 			const cssString = convertStyleObjectToCSS(styleContent)
 
 			// Replace in result
 			const before = result.substring(0, styleStart)
-			const after = result.substring(i + 2) // +2 for '}}'
+			const after = result.substring(i + 2)
 			result = before + `style="${cssString}"` + after
 
 			searchStart = styleStart + cssString.length + 10
 		}
+
+		// STEP 2: Convert style="..." with JS object syntax (Figma malformed export)
+		// Matches: style="color: 'black', fontSize: 10, ..."
+		result = result.replace(/style="([^"]*?,.*?)"/g, (match, content) => {
+			// Check if it has JS object syntax (contains commas and colons)
+			if (content.includes(',') && content.includes(':')) {
+				const cssString = convertStyleObjectToCSS(content)
+				return `style="${cssString}"`
+			}
+			return match // Keep as-is if it's already valid CSS
+		})
 
 		return result
 	}
@@ -138,6 +149,11 @@ const TemplateBuilderForm: React.FC<{
 			}
 			if (current.trim()) properties.push(current.trim())
 
+			// Properties that need 'px' suffix when numeric
+			const needsPxSuffix = ['width', 'height', 'top', 'left', 'right', 'bottom',
+				'fontSize', 'letterSpacing', 'lineHeight', 'margin', 'padding',
+				'borderRadius', 'gap']
+
 			// Convert each property from JS to CSS
 			const cssProperties = properties.map(prop => {
 				const colonIndex = prop.indexOf(':')
@@ -151,6 +167,11 @@ const TemplateBuilderForm: React.FC<{
 
 				// Convert camelCase to kebab-case
 				const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase()
+
+				// Add 'px' suffix to numeric values that need it
+				if (needsPxSuffix.includes(key) && /^\d+$/.test(value)) {
+					value = value + 'px'
+				}
 
 				return `${cssKey}: ${value}`
 			}).filter(Boolean).join('; ')
