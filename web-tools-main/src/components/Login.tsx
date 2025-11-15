@@ -1,12 +1,25 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { GoogleOutlined, UserOutlined } from "@ant-design/icons"
 import { Alert, Button, Card, Divider, message } from "antd"
 import { useAuth } from "@/lib/context/AuthContext"
+import { hasFirebaseConfig } from "@/lib/firebase/firebaseConfig"
 
 const Login = () => {
 	const [messageApi, contextHolder] = message.useMessage()
+	const [firebaseAvailable, setFirebaseAvailable] = useState(false)
 
 	const { signInWithGoogleProvider, signInAsGuest, loading, error, clearError } = useAuth()
+
+	useEffect(() => {
+		// Check if Firebase is configured
+		console.log("🔍 Checking Firebase configuration...")
+		setFirebaseAvailable(hasFirebaseConfig)
+		if (!hasFirebaseConfig) {
+			console.log("⚠️ Firebase not configured - Google login will be disabled")
+		} else {
+			console.log("✅ Firebase configured - Google login available")
+		}
+	}, [])
 
 	useEffect(() => {
 		console.log("🔐 Login component mounted")
@@ -46,29 +59,53 @@ const Login = () => {
 					<p className="text-gray-600">سجّل دخولك للمتابعة</p>
 				</div>
 
-				<Button
-					icon={<GoogleOutlined />}
-					onClick={handleGoogleSignIn}
-					loading={loading}
-					block
-					size="large"
-					type="primary"
-				>
-					سجّل دخولك بواسطة Google
-				</Button>
+				{firebaseAvailable ? (
+					<>
+						<Button
+							icon={<GoogleOutlined />}
+							onClick={handleGoogleSignIn}
+							loading={loading}
+							block
+							size="large"
+							type="primary"
+						>
+							سجّل دخولك بواسطة Google
+						</Button>
 
-				<Divider plain>أو</Divider>
+						<Divider plain>أو</Divider>
 
-				<Button
-					icon={<UserOutlined />}
-					onClick={handleGuestSignIn}
-					loading={loading}
-					block
-					size="large"
-					type="default"
-				>
-					متابعة كضيف
-				</Button>
+						<Button
+							icon={<UserOutlined />}
+							onClick={handleGuestSignIn}
+							loading={loading}
+							block
+							size="large"
+							type="default"
+						>
+							متابعة كضيف
+						</Button>
+					</>
+				) : (
+					<>
+						<Button
+							icon={<UserOutlined />}
+							onClick={handleGuestSignIn}
+							loading={loading}
+							block
+							size="large"
+							type="primary"
+						>
+							متابعة كضيف
+						</Button>
+
+						<div className="mt-4 rounded bg-yellow-50 p-3 text-center text-sm text-yellow-800">
+							<p>
+								ℹ️ <strong>ملاحظة:</strong> تسجيل الدخول عبر Google غير متاح حالياً.
+								يمكنك المتابعة كضيف للوصول لجميع الأدوات.
+							</p>
+						</div>
+					</>
+				)}
 
 				<div className="mt-4 rounded bg-blue-50 p-3 text-center text-sm text-blue-800">
 					<p>
