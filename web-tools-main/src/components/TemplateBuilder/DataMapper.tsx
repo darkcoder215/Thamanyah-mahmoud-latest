@@ -124,27 +124,46 @@ const DataMapper: React.FC<DataMapperProps> = ({ convertedCode, assets, onDataMa
 	}
 
 	useEffect(() => {
+		console.log("🔍 Extracting data fields from code...")
 		const extracted = extractDataFields(convertedCode)
+		console.log(`✅ Found ${extracted.length} data fields to map`)
 		setDataFields(extracted)
 	}, [convertedCode])
 
 	const handleFieldChange = (key: string, value: string) => {
+		console.log(`🔗 Field mapping changed: ${key} → ${value}`)
 		setDataFields((prev) =>
 			prev.map((field) => (field.key === key ? { ...field, mappedField: value } : field)),
 		)
 	}
 
 	const handleCustomValueChange = (key: string, value: string) => {
+		console.log(`✏️ Custom value set: ${key} = ${value}`)
 		setCustomValues((prev) => ({ ...prev, [key]: value }))
 	}
 
 	const handleNext = () => {
+		console.log("🔍 Validating field mappings...")
+
 		// Check if all fields are mapped
 		const unmapped = dataFields.filter((f) => !f.mappedField)
 		if (unmapped.length > 0) {
+			console.warn("⚠️ Unmapped fields found:", unmapped.length)
 			message.warning("الرجاء ربط جميع الحقول أو اختيار 'نص مخصص'")
 			return
 		}
+
+		// Check custom values
+		const missingCustomValues = dataFields.filter(
+			(f) => f.mappedField === "CUSTOM" && !customValues[f.key],
+		)
+		if (missingCustomValues.length > 0) {
+			console.warn("⚠️ Missing custom values:", missingCustomValues.length)
+			message.warning("الرجاء إدخال القيم المخصصة لجميع الحقول المحددة")
+			return
+		}
+
+		console.log("✅ All fields validated")
 
 		// Create mapping object
 		const mapping: { [key: string]: string } = {}
@@ -152,11 +171,14 @@ const DataMapper: React.FC<DataMapperProps> = ({ convertedCode, assets, onDataMa
 			if (field.mappedField === "CUSTOM") {
 				// Use custom value
 				mapping[field.placeholder] = customValues[field.key] || field.placeholder
+				console.log(`📌 Custom mapping: ${field.placeholder} = ${customValues[field.key]}`)
 			} else if (field.mappedField) {
 				mapping[field.placeholder] = field.mappedField
+				console.log(`📌 Field mapping: ${field.placeholder} → ${field.mappedField}`)
 			}
 		})
 
+		console.log("✅ Total mappings created:", Object.keys(mapping).length)
 		onDataMap(mapping)
 	}
 

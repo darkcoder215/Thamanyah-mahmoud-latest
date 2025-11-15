@@ -19,6 +19,8 @@ const StyleConverter: React.FC<StyleConverterProps> = ({ figmaCode, onConvert, o
 	const convertInlineStyleToTailwind = (styleObj: Record<string, string>): string => {
 		const tailwindClasses: string[] = []
 
+		console.log("🎨 Converting styles:", styleObj)
+
 		// Width & Height
 		if (styleObj.width) {
 			const width = styleObj.width
@@ -26,6 +28,9 @@ const StyleConverter: React.FC<StyleConverterProps> = ({ figmaCode, onConvert, o
 			else if (width.includes("px")) {
 				const value = parseInt(width)
 				tailwindClasses.push(`w-[${value}px]`)
+			} else if (width.includes("%")) {
+				const value = parseInt(width)
+				tailwindClasses.push(`w-[${value}%]`)
 			}
 		}
 
@@ -35,6 +40,9 @@ const StyleConverter: React.FC<StyleConverterProps> = ({ figmaCode, onConvert, o
 			else if (height.includes("px")) {
 				const value = parseInt(height)
 				tailwindClasses.push(`h-[${value}px]`)
+			} else if (height.includes("%")) {
+				const value = parseInt(height)
+				tailwindClasses.push(`h-[${value}%]`)
 			}
 		}
 
@@ -106,11 +114,38 @@ const StyleConverter: React.FC<StyleConverterProps> = ({ figmaCode, onConvert, o
 		if (styleObj.fontWeight === "300") tailwindClasses.push("font-light")
 		if (styleObj.fontWeight === "400") tailwindClasses.push("font-normal")
 
-		// Font Family
-		if (styleObj.fontFamily?.includes("serif display"))
-			tailwindClasses.push("font-8-display")
-		else if (styleObj.fontFamily?.includes("serif")) tailwindClasses.push("font-8-serif")
-		else if (styleObj.fontFamily?.includes("sans")) tailwindClasses.push("font-8-sans")
+		// Font Family - Critical for Arabic text!
+		if (styleObj.fontFamily) {
+			const fontFamily = styleObj.fontFamily.toLowerCase()
+			console.log("📝 Detecting font family:", fontFamily)
+
+			if (
+				fontFamily.includes("thmanyah serif display") ||
+				fontFamily.includes("serif display") ||
+				fontFamily.includes("display")
+			) {
+				tailwindClasses.push("font-8-display")
+				console.log("✅ Mapped to: font-8-display (Thmanyah Serif Display)")
+			} else if (
+				fontFamily.includes("thmanyah serif text") ||
+				fontFamily.includes("thmanyahseriftext") ||
+				(fontFamily.includes("serif") && !fontFamily.includes("display"))
+			) {
+				tailwindClasses.push("font-8-serif")
+				console.log("✅ Mapped to: font-8-serif (Thmanyah Serif Text)")
+			} else if (
+				fontFamily.includes("thmanyah sans") ||
+				fontFamily.includes("thmanyahsans") ||
+				fontFamily.includes("sans")
+			) {
+				tailwindClasses.push("font-8-sans")
+				console.log("✅ Mapped to: font-8-sans (Thmanyah Sans)")
+			} else {
+				// Default to sans for Arabic compatibility
+				tailwindClasses.push("font-8-sans")
+				console.log("⚠️ Unknown font, defaulting to font-8-sans")
+			}
+		}
 
 		// Position values (top, left, right, bottom)
 		if (styleObj.left) tailwindClasses.push(`left-[${styleObj.left}px]`)
@@ -176,53 +211,86 @@ const StyleConverter: React.FC<StyleConverterProps> = ({ figmaCode, onConvert, o
 	}
 
 	const convertFigmaToReact = (code: string): string => {
+		console.log("🚀 Starting Figma to React conversion...")
+		console.log("📄 Original code length:", code.length, "characters")
+
 		let converted = code
 
-		// Fix style attributes - convert object notation to proper React style objects
-		converted = converted.replace(/style=\{\{([^}]+)\}\}/g, (match, styleContent) => {
-			const styleObj = parseStyleObject(styleContent)
+		try {
+			// Fix style attributes - convert object notation to proper React style objects
+			let styleCount = 0
+			converted = converted.replace(/style=\{\{([^}]+)\}\}/g, (match, styleContent) => {
+				styleCount++
+				console.log(`🔄 Processing style #${styleCount}`)
 
-			if (conversionMode === "tailwind") {
-				const tailwindClasses = convertInlineStyleToTailwind(styleObj)
-				return `className="${tailwindClasses}"`
-			} else {
-				// Keep as inline styles but fix syntax
-				return `style={{${styleContent}}}`
-			}
-		})
+				try {
+					const styleObj = parseStyleObject(styleContent)
 
-		// Fix span style attributes
-		converted = converted.replace(/style="([^"]+)"/g, (match, styleContent) => {
-			const styleObj = parseStyleObject(styleContent)
+					if (conversionMode === "tailwind") {
+						const tailwindClasses = convertInlineStyleToTailwind(styleObj)
+						console.log(`✅ Converted to Tailwind: ${tailwindClasses}`)
+						return `className="${tailwindClasses}"`
+					} else {
+						// Keep as inline styles but fix syntax
+						return `style={{${styleContent}}}`
+					}
+				} catch (error) {
+					console.error("❌ Error processing style:", error)
+					// Return original if conversion fails
+					return match
+				}
+			})
 
-			if (conversionMode === "tailwind") {
-				const tailwindClasses = convertInlineStyleToTailwind(styleObj)
-				return `className="${tailwindClasses}"`
-			} else {
-				// Convert to React inline style object
-				const styleEntries = styleContent
-					.split(";")
-					.filter((s) => s.trim())
-					.map((s) => {
-						const [key, value] = s.split(":").map((x) => x.trim())
-						const camelKey = key.replace(/-([a-z])/g, (g) => g[1].toUpperCase())
-						return `${camelKey}: '${value}'`
-					})
-					.join(", ")
-				return `style={{${styleEntries}}}`
-			}
-		})
+			console.log(`✅ Processed ${styleCount} style objects`)
 
-		// Replace img with Next.js Image component
-		converted = converted.replace(
-			/<img style=\{[^}]+\} src="([^"]+)"([^>]*)\/?>/g,
-			(match, src, attrs) => {
-				return `<Image src="${src}" alt="" width={100} height={100} className="object-contain"${attrs} />`
-			},
-		)
+			// Fix span style attributes
+			let spanCount = 0
+			converted = converted.replace(/style="([^"]+)"/g, (match, styleContent) => {
+				spanCount++
+				console.log(`🔄 Processing span style #${spanCount}`)
 
-		// Add proper imports
-		const imports = `import React from "react"
+				try {
+					const styleObj = parseStyleObject(styleContent)
+
+					if (conversionMode === "tailwind") {
+						const tailwindClasses = convertInlineStyleToTailwind(styleObj)
+						return `className="${tailwindClasses}"`
+					} else {
+						// Convert to React inline style object
+						const styleEntries = styleContent
+							.split(";")
+							.filter((s) => s.trim())
+							.map((s) => {
+								const [key, value] = s.split(":").map((x) => x.trim())
+								const camelKey = key.replace(/-([a-z])/g, (g) => g[1].toUpperCase())
+								return `${camelKey}: '${value}'`
+							})
+							.join(", ")
+						return `style={{${styleEntries}}}`
+					}
+				} catch (error) {
+					console.error("❌ Error processing span style:", error)
+					return match
+				}
+			})
+
+			console.log(`✅ Processed ${spanCount} span style objects`)
+
+			// Replace img with Next.js Image component
+			let imageCount = 0
+			converted = converted.replace(
+				/<img ([^>]*)src="([^"]+)"([^>]*)\/?>/g,
+				(match, before, src, after) => {
+					imageCount++
+					console.log(`🖼️ Processing image #${imageCount}: ${src}`)
+					return `<Image src="${src}" alt="" width={100} height={100} className="object-contain"${before}${after} />`
+				},
+			)
+
+			console.log(`✅ Processed ${imageCount} images`)
+
+			// Add proper imports
+			const imports = `import React from "react"
 import Image from "next/image"
 import PageFooter from "@/components/Form/Preview/PageFooter"
 import { JobOfferFormData } from "@/components/Form/JobOfferFormTypes"
@@ -235,21 +303,29 @@ const CustomTemplate: React.FC<CustomTemplateProps> = ({ formData }) => {
   return (
 `
 
-		const closing = `
+			const closing = `
   )
 }
 
 export default CustomTemplate`
 
-		// Wrap in component
-		converted = `${imports}
-    <div className="page font-8-sans text-[14pt] font-light">
+			// Wrap in component with RTL support
+			converted = `${imports}
+    <div className="page font-8-sans text-[14pt] font-light" dir="rtl">
       ${converted}
       <PageFooter />
     </div>
 ${closing}`
 
-		return converted
+			console.log("✅ Conversion complete!")
+			console.log("📄 Converted code length:", converted.length, "characters")
+
+			return converted
+		} catch (error) {
+			console.error("❌ Fatal error during conversion:", error)
+			message.error("حدث خطأ أثناء تحويل الكود. الرجاء المحاولة مرة أخرى.")
+			throw error
+		}
 	}
 
 	const handleConvert = () => {

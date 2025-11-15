@@ -77,13 +77,51 @@ const AssetManager: React.FC<AssetManagerProps> = ({ convertedCode, onAssetsUplo
 	}, [assets])
 
 	const handleUpload = (index: number, file: File) => {
-		const reader = new FileReader()
-		reader.onload = (e) => {
-			const updatedAssets = [...assets]
-			updatedAssets[index].uploadedUrl = e.target?.result as string
-			setAssets(updatedAssets)
-			message.success(`تم رفع ${updatedAssets[index].description}`)
+		console.log(`📤 Uploading asset #${index + 1}:`, file.name)
+
+		// Validate file
+		if (!file.type.startsWith("image/")) {
+			console.error("❌ Invalid file type:", file.type)
+			message.error("يرجى رفع ملف صورة فقط (PNG, JPG, SVG)")
+			return false
 		}
+
+		// Check file size (max 5MB)
+		const maxSize = 5 * 1024 * 1024 // 5MB
+		if (file.size > maxSize) {
+			console.error("❌ File too large:", file.size, "bytes")
+			message.error("حجم الملف كبير جداً. الحد الأقصى 5 ميجابايت")
+			return false
+		}
+
+		console.log("✅ File validation passed")
+		console.log("📦 File size:", (file.size / 1024).toFixed(2), "KB")
+		console.log("🎨 File type:", file.type)
+
+		const reader = new FileReader()
+
+		reader.onload = (e) => {
+			try {
+				const updatedAssets = [...assets]
+				const base64 = e.target?.result as string
+				updatedAssets[index].uploadedUrl = base64
+
+				console.log(`✅ Asset uploaded successfully: ${updatedAssets[index].description}`)
+				console.log("📊 Base64 length:", base64.length, "characters")
+
+				setAssets(updatedAssets)
+				message.success(`تم رفع ${updatedAssets[index].description}`)
+			} catch (error) {
+				console.error("❌ Error processing file:", error)
+				message.error("حدث خطأ أثناء معالجة الملف")
+			}
+		}
+
+		reader.onerror = (error) => {
+			console.error("❌ FileReader error:", error)
+			message.error("حدث خطأ أثناء قراءة الملف")
+		}
+
 		reader.readAsDataURL(file)
 		return false // Prevent default upload
 	}
