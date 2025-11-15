@@ -1,19 +1,11 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
-import { IBM_Plex_Sans_Arabic } from "next/font/google"
 import localFont from "next/font/local"
 import { AntdRegistry } from "@ant-design/nextjs-registry"
 import { ConfigProvider, theme } from "antd"
 import arEg from "antd/lib/locale/ar_EG"
 import DefaultLayout from "./DefaultLayout"
-
-const IBM = IBM_Plex_Sans_Arabic({
-	weight: ["300", "400", "500", "600", "700"],
-	subsets: ["arabic"],
-	display: "swap",
-	variable: "--ibm-font",
-})
 export const ThmanyahDisplay = localFont({
 	src: [
 		{
@@ -154,7 +146,7 @@ export default function AntdLayout({ children }: React.PropsWithChildren) {
 		<html
 			lang="ar"
 			dir="rtl"
-			className={`${IBM.variable} ${ThmanyahDisplay.variable} ${ThmanyahSerifText.variable} ${ThmanyahSans.variable}`}
+			className={`${ThmanyahDisplay.variable} ${ThmanyahSerifText.variable} ${ThmanyahSans.variable}`}
 		>
 			<body>
 				<AntdRegistry>
@@ -166,7 +158,7 @@ export default function AntdLayout({ children }: React.PropsWithChildren) {
 							algorithm: darkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
 							cssVar: true,
 							token: {
-								fontFamily: "var(--ibm-font)",
+								fontFamily: "var(--thmanyah-sans)",
 								colorText: darkMode ? "#fff" : "var(--foreground)",
 								colorLink: "#fa541c",
 								colorPrimary: "#fa541c",

@@ -11,6 +11,53 @@ interface CustomTemplateRendererProps {
 	formData: JobOfferFormData
 }
 
+const convertStyleObjectToString = (styleStr: string): string => {
+	try {
+		// Remove the style={{ and }} wrapper
+		const cleaned = styleStr.replace(/^style=\{\{/, '').replace(/\}\}$/, '')
+
+		// Split by commas (but not commas inside quotes)
+		const properties = []
+		let current = ''
+		let inQuotes = false
+
+		for (let i = 0; i < cleaned.length; i++) {
+			const char = cleaned[i]
+			if (char === "'" || char === '"') {
+				inQuotes = !inQuotes
+			}
+			if (char === ',' && !inQuotes) {
+				properties.push(current.trim())
+				current = ''
+			} else {
+				current += char
+			}
+		}
+		if (current.trim()) {
+			properties.push(current.trim())
+		}
+
+		// Convert each property
+		const cssProperties = properties.map(prop => {
+			const [key, ...valueParts] = prop.split(':')
+			let value = valueParts.join(':').trim()
+
+			// Remove quotes
+			value = value.replace(/^['"]/, '').replace(/['"]$/, '')
+
+			// Convert camelCase to kebab-case
+			const cssKey = key.trim().replace(/([A-Z])/g, '-$1').toLowerCase()
+
+			return `${cssKey}: ${value}`
+		}).join('; ')
+
+		return `style="${cssProperties}"`
+	} catch (error) {
+		console.error('Error converting style:', error)
+		return styleStr
+	}
+}
+
 const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 	template,
 	formData,
@@ -61,6 +108,11 @@ const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 
 			// Convert className to class
 			html = html.replace(/className=/g, "class=")
+
+			// Convert JSX inline styles style={{...}} to HTML style="..."
+			html = html.replace(/style=\{\{([^}]+)\}\}/g, (match) => {
+				return convertStyleObjectToString(match)
+			})
 
 			// Remove self-closing tags that aren't valid HTML
 			html = html.replace(/<(\w+)([^>]*?)\s*\/>/g, "<$1$2></$1>")

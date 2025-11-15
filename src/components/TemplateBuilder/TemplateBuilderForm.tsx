@@ -28,20 +28,65 @@ const TemplateBuilderForm: React.FC<{
 	const [form] = Form.useForm()
 
 	const detectAssets = (code: string): string[] => {
-		// Find all src="..." attributes in the code
-		const srcRegex = /src=["']([^"']+)["']/g
+		// Find all src="..." and src='...' attributes in the code
+		const srcRegex = /src=["'{]([^"'}]+)["'}]/g
 		const matches = []
 		let match
 
 		while ((match = srcRegex.exec(code)) !== null) {
 			const url = match[1]
-			// Skip data URLs and absolute URLs that start with http/https
-			if (!url.startsWith("data:") && !url.startsWith("http")) {
-				matches.push(url)
-			}
+			// Include ALL src URLs (user can replace placeholder URLs)
+			matches.push(url)
 		}
 
 		return [...new Set(matches)] // Remove duplicates
+	}
+
+	const convertStyleObjectToString = (styleStr: string): string => {
+		try {
+			// Remove the style={{ and }} wrapper
+			const cleaned = styleStr.replace(/^style=\{\{/, '').replace(/\}\}$/, '')
+
+			// Split by commas (but not commas inside quotes)
+			const properties = []
+			let current = ''
+			let inQuotes = false
+
+			for (let i = 0; i < cleaned.length; i++) {
+				const char = cleaned[i]
+				if (char === "'" || char === '"') {
+					inQuotes = !inQuotes
+				}
+				if (char === ',' && !inQuotes) {
+					properties.push(current.trim())
+					current = ''
+				} else {
+					current += char
+				}
+			}
+			if (current.trim()) {
+				properties.push(current.trim())
+			}
+
+			// Convert each property
+			const cssProperties = properties.map(prop => {
+				const [key, ...valueParts] = prop.split(':')
+				let value = valueParts.join(':').trim()
+
+				// Remove quotes
+				value = value.replace(/^['"]/, '').replace(/['"]$/, '')
+
+				// Convert camelCase to kebab-case
+				const cssKey = key.trim().replace(/([A-Z])/g, '-$1').toLowerCase()
+
+				return `${cssKey}: ${value}`
+			}).join('; ')
+
+			return `style="${cssProperties}"`
+		} catch (error) {
+			console.error('Error converting style:', error)
+			return styleStr
+		}
 	}
 
 	const handleCodeNext = () => {
@@ -122,6 +167,11 @@ const TemplateBuilderForm: React.FC<{
 
 		// Convert className to class
 		html = html.replace(/className=/g, "class=")
+
+		// Convert JSX inline styles style={{...}} to HTML style="..."
+		html = html.replace(/style=\{\{([^}]+)\}\}/g, (match) => {
+			return convertStyleObjectToString(match)
+		})
 
 		// Remove self-closing tags that aren't valid HTML
 		html = html.replace(/<(\w+)([^>]*?)\s*\/>/g, "<$1$2></$1>")
