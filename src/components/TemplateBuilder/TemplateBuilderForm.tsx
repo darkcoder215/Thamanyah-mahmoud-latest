@@ -268,11 +268,18 @@ const TemplateBuilderForm: React.FC<{
 
 		// Convert JSX inline styles style={{...}} to HTML style="..."
 		console.log("🔄 Converting JSX styles to HTML...")
-		const beforeConversion = html.substring(0, 200)
+		const beforeConversion = html.substring(0, 300)
+		const countStyleBefore = (html.match(/style=\{\{/g) || []).length
 		html = convertJSXStylesToHTML(html)
-		const afterConversion = html.substring(0, 200)
+		const countStyleAfter = (html.match(/style="/g) || []).length
+		const afterConversion = html.substring(0, 300)
 		console.log("📊 Before conversion:", beforeConversion)
 		console.log("📊 After conversion:", afterConversion)
+		console.log(`📊 Converted ${countStyleBefore} style={{}} to ${countStyleAfter} style=""`)
+
+		// CRITICAL FIX: Replace height: 100% with min-height to ensure visibility
+		// Figma uses height: 100% which becomes 0px without explicit parent height
+		html = html.replace(/height:\s*100%/g, 'min-height: 800px')
 
 		// Remove self-closing tags that aren't valid HTML (except img, br, hr, input)
 		html = html.replace(/<(div|span|p|h1|h2|h3|h4|h5|h6|a|button|section|article|header|footer|nav|main|aside)([^>]*?)\s*\/>/g, "<$1$2></$1>")
@@ -301,6 +308,12 @@ const TemplateBuilderForm: React.FC<{
 		})
 
 		console.log("✅ Preview HTML generated, length:", html.length)
+		console.log("✅ Final HTML (first 500 chars):", html.substring(0, 500))
+
+		if (!html.trim()) {
+			console.error("❌ Generated HTML is EMPTY!")
+			return '<div class="p-8 text-red-600">خطأ: لم يتم إنشاء HTML. تحقق من وحدة التحكم (Console) للتفاصيل.</div>'
+		}
 
 		return html.trim()
 	}
@@ -430,16 +443,25 @@ const TemplateBuilderForm: React.FC<{
 						القيم بالبيانات الفعلية عند الاستخدام.
 					</div>
 
+					<div className="mb-4 rounded bg-red-100 p-2 text-xs text-red-800">
+						<strong>⚠️ تنبيه:</strong> إذا كانت المعاينة بيضاء، تحقق من HTML المُحوّل أدناه ووحدة التحكم في المتصفح (F12)
+					</div>
+
 					<div
-						className="mb-6 rounded border bg-white p-8"
-						style={{ direction: "rtl", minHeight: "800px" }}
+						className="mb-6 rounded border-4 border-blue-500 bg-white p-8"
+						style={{ direction: "rtl", minHeight: "800px", backgroundColor: "#fafafa" }}
 						dangerouslySetInnerHTML={{ __html: generatePreviewHTML() }}
 					/>
 
-					{/* Debug info */}
-					<details className="mb-4 text-xs text-gray-600">
-						<summary className="cursor-pointer">عرض HTML المُحوّل (للتطوير)</summary>
-						<pre className="mt-2 max-h-96 overflow-auto rounded bg-gray-100 p-4">
+					{/* Debug info - OPEN BY DEFAULT */}
+					<details open className="mb-4 rounded border border-yellow-300 bg-yellow-50 p-4 text-xs">
+						<summary className="cursor-pointer font-bold text-yellow-800">
+							🔍 عرض HTML المُحوّل (للتطوير) - افتح وحدة التحكم (Console) لمزيد من التفاصيل
+						</summary>
+						<div className="mt-2 text-xs text-gray-700">
+							<strong>عدد الأحرف:</strong> {generatePreviewHTML().length} حرف
+						</div>
+						<pre className="mt-2 max-h-96 overflow-auto rounded bg-gray-100 p-4 text-xs">
 							{generatePreviewHTML()}
 						</pre>
 					</details>
