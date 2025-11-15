@@ -24,6 +24,7 @@ const TemplateBuilderForm: React.FC<{
 	const [code, setCode] = useState("")
 	const [assets, setAssets] = useState<{ [key: string]: string }>({})
 	const [detectedAssets, setDetectedAssets] = useState<string[]>([])
+	const [detectedVariables, setDetectedVariables] = useState<string[]>([])
 	const [currentStep, setCurrentStep] = useState<"code" | "assets" | "preview">("code")
 	const [form] = Form.useForm()
 
@@ -42,50 +43,122 @@ const TemplateBuilderForm: React.FC<{
 		return [...new Set(matches)] // Remove duplicates
 	}
 
-	const convertStyleObjectToString = (styleStr: string): string => {
-		try {
-			// Remove the style={{ and }} wrapper
-			const cleaned = styleStr.replace(/^style=\{\{/, '').replace(/\}\}$/, '')
+	const detectVariables = (code: string): string[] => {
+		// Find all {formData.xxx} patterns
+		const varRegex = /\{formData\.(\w+)\}/g
+		const matches = []
+		let match
 
-			// Split by commas (but not commas inside quotes)
+		while ((match = varRegex.exec(code)) !== null) {
+			matches.push(match[1])
+		}
+
+		return [...new Set(matches)] // Remove duplicates
+	}
+
+	const convertJSXStylesToHTML = (html: string): string => {
+		let result = html
+		let searchStart = 0
+
+		while (true) {
+			// Find next occurrence of style={{
+			const styleStart = result.indexOf('style={{', searchStart)
+			if (styleStart === -1) break
+
+			// Find the matching }} by counting braces
+			let braceCount = 0
+			let i = styleStart + 7 // Start after 'style={{'
+			let foundEnd = false
+
+			for (; i < result.length - 1; i++) {
+				if (result[i] === '{') braceCount++
+				if (result[i] === '}') {
+					if (braceCount === 0 && result[i + 1] === '}') {
+						foundEnd = true
+						break
+					}
+					braceCount--
+				}
+			}
+
+			if (!foundEnd) {
+				searchStart = styleStart + 1
+				continue
+			}
+
+			// Extract the style object content
+			const styleContent = result.substring(styleStart + 8, i) // +8 for 'style={{'
+
+			// Convert to CSS string
+			const cssString = convertStyleObjectToCSS(styleContent)
+
+			// Replace in result
+			const before = result.substring(0, styleStart)
+			const after = result.substring(i + 2) // +2 for '}}'
+			result = before + `style="${cssString}"` + after
+
+			searchStart = styleStart + cssString.length + 10
+		}
+
+		return result
+	}
+
+	const convertStyleObjectToCSS = (styleContent: string): string => {
+		try {
+			// Split by commas but respect quotes and nested objects
 			const properties = []
 			let current = ''
 			let inQuotes = false
+			let quoteChar = ''
+			let braceDepth = 0
 
-			for (let i = 0; i < cleaned.length; i++) {
-				const char = cleaned[i]
-				if (char === "'" || char === '"') {
-					inQuotes = !inQuotes
+			for (let i = 0; i < styleContent.length; i++) {
+				const char = styleContent[i]
+
+				if ((char === "'" || char === '"') && styleContent[i - 1] !== '\\') {
+					if (!inQuotes) {
+						inQuotes = true
+						quoteChar = char
+					} else if (char === quoteChar) {
+						inQuotes = false
+					}
 				}
-				if (char === ',' && !inQuotes) {
-					properties.push(current.trim())
+
+				if (!inQuotes) {
+					if (char === '{') braceDepth++
+					if (char === '}') braceDepth--
+				}
+
+				if (char === ',' && !inQuotes && braceDepth === 0) {
+					if (current.trim()) properties.push(current.trim())
 					current = ''
 				} else {
 					current += char
 				}
 			}
-			if (current.trim()) {
-				properties.push(current.trim())
-			}
+			if (current.trim()) properties.push(current.trim())
 
-			// Convert each property
+			// Convert each property from JS to CSS
 			const cssProperties = properties.map(prop => {
-				const [key, ...valueParts] = prop.split(':')
-				let value = valueParts.join(':').trim()
+				const colonIndex = prop.indexOf(':')
+				if (colonIndex === -1) return ''
 
-				// Remove quotes
+				const key = prop.substring(0, colonIndex).trim()
+				let value = prop.substring(colonIndex + 1).trim()
+
+				// Remove quotes around values
 				value = value.replace(/^['"]/, '').replace(/['"]$/, '')
 
 				// Convert camelCase to kebab-case
-				const cssKey = key.trim().replace(/([A-Z])/g, '-$1').toLowerCase()
+				const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase()
 
 				return `${cssKey}: ${value}`
-			}).join('; ')
+			}).filter(Boolean).join('; ')
 
-			return `style="${cssProperties}"`
+			return cssProperties
 		} catch (error) {
-			console.error('Error converting style:', error)
-			return styleStr
+			console.error('Error converting style object:', error)
+			return ''
 		}
 	}
 
@@ -100,7 +173,13 @@ const TemplateBuilderForm: React.FC<{
 		}
 
 		const detected = detectAssets(code)
+		const variables = detectVariables(code)
+
 		setDetectedAssets(detected)
+		setDetectedVariables(variables)
+
+		console.log("🔍 Detected assets:", detected)
+		console.log("🔍 Detected variables:", variables)
 
 		if (detected.length > 0) {
 			setCurrentStep("assets")
@@ -141,40 +220,15 @@ const TemplateBuilderForm: React.FC<{
 	const generatePreviewHTML = (): string => {
 		let html = code
 
-		// Step 1: Replace asset placeholders with uploaded images
-		Object.entries(assets).forEach(([placeholder, uploadedUrl]) => {
-			html = html.replace(new RegExp(`src=["']${placeholder}["']`, "g"), `src="${uploadedUrl}"`)
-		})
+		console.log("🎨 Generating preview HTML...")
+		console.log("📝 Original code length:", html.length)
 
-		// Step 2: Replace formData placeholders with sample data
-		const sampleData = {
-			name: "أحمد محمد",
-			jobTitle: "مدير منتج",
-			monthlySalary: "15,000",
-			email: "test@example.com",
-		}
-
-		Object.entries(sampleData).forEach(([key, value]) => {
-			html = html.replace(new RegExp(`\\{formData\\.${key}\\}`, "g"), value)
-		})
-
-		// Step 3: Convert JSX to HTML for preview
+		// Step 1: Convert JSX to HTML
 		// Remove import statements
 		html = html.replace(/import\s+.+from\s+['"].+['"];?\s*/g, "")
 
 		// Remove export statements
 		html = html.replace(/export\s+(default\s+)?/g, "")
-
-		// Convert className to class
-		html = html.replace(/className=/g, "class=")
-
-		// Convert JSX inline styles style={{...}} to HTML style="..."
-		html = html.replace(/style=\{\{([^}]+)\}\}/g, (match) => {
-			return convertStyleObjectToString(match)
-		})
-
-		// Remove self-closing tags that aren't valid HTML
-		html = html.replace(/<(\w+)([^>]*?)\s*\/>/g, "<$1$2></$1>")
 
 		// Extract just the JSX return value if it's in a component
 		const returnMatch = html.match(/return\s*\(([\s\S]*)\);?\s*\}?\s*$/m)
@@ -185,6 +239,41 @@ const TemplateBuilderForm: React.FC<{
 		// Remove any remaining function wrapper
 		html = html.replace(/^.*?=>\s*{?\s*/m, "")
 		html = html.replace(/^.*?function.*?\{?\s*/m, "")
+
+		// Convert className to class
+		html = html.replace(/className=/g, "class=")
+
+		// Convert JSX inline styles style={{...}} to HTML style="..."
+		console.log("🔄 Converting JSX styles to HTML...")
+		html = convertJSXStylesToHTML(html)
+
+		// Remove self-closing tags that aren't valid HTML (except img, br, hr, input)
+		html = html.replace(/<(div|span|p|h1|h2|h3|h4|h5|h6|a|button|section|article|header|footer|nav|main|aside)([^>]*?)\s*\/>/g, "<$1$2></$1>")
+
+		// Step 2: Replace asset placeholders with uploaded images
+		Object.entries(assets).forEach(([placeholder, uploadedUrl]) => {
+			const escapedPlaceholder = placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+			html = html.replace(new RegExp(`src=["']${escapedPlaceholder}["']`, "g"), `src="${uploadedUrl}"`)
+		})
+
+		// Step 3: Replace formData placeholders with sample data
+		const sampleData: Record<string, string> = {
+			name: "أحمد محمد",
+			jobTitle: "مدير منتج",
+			monthlySalary: "15,000",
+			email: "test@example.com",
+			company: "شركة تقنية",
+			department: "تطوير المنتجات",
+			startDate: "2024-01-01",
+			salary: "15000",
+		}
+
+		detectedVariables.forEach((varName) => {
+			const value = sampleData[varName] || `[${varName}]`
+			html = html.replace(new RegExp(`\\{formData\\.${varName}\\}`, "g"), value)
+		})
+
+		console.log("✅ Preview HTML generated, length:", html.length)
 
 		return html.trim()
 	}
@@ -299,6 +388,16 @@ const TemplateBuilderForm: React.FC<{
 
 			{currentStep === "preview" && (
 				<Card title="معاينة القالب">
+					{detectedVariables.length > 0 && (
+						<div className="mb-4 rounded bg-green-50 p-3 text-sm text-green-800">
+							<strong>المتغيرات المكتشفة:</strong> تم العثور على {detectedVariables.length} متغير
+							في القالب:{" "}
+							<code className="rounded bg-green-100 px-1">
+								{detectedVariables.map(v => `{formData.${v}}`).join(", ")}
+							</code>
+						</div>
+					)}
+
 					<div className="mb-4 rounded bg-blue-50 p-3 text-sm text-blue-800">
 						<strong>ملاحظة:</strong> هذه معاينة باستخدام بيانات تجريبية. سيتم استبدال
 						القيم بالبيانات الفعلية عند الاستخدام.

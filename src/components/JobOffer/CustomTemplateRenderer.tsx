@@ -11,50 +11,109 @@ interface CustomTemplateRendererProps {
 	formData: JobOfferFormData
 }
 
-const convertStyleObjectToString = (styleStr: string): string => {
-	try {
-		// Remove the style={{ and }} wrapper
-		const cleaned = styleStr.replace(/^style=\{\{/, '').replace(/\}\}$/, '')
+const convertJSXStylesToHTML = (html: string): string => {
+	let result = html
+	let searchStart = 0
 
-		// Split by commas (but not commas inside quotes)
+	while (true) {
+		// Find next occurrence of style={{
+		const styleStart = result.indexOf('style={{', searchStart)
+		if (styleStart === -1) break
+
+		// Find the matching }} by counting braces
+		let braceCount = 0
+		let i = styleStart + 7 // Start after 'style={{'
+		let foundEnd = false
+
+		for (; i < result.length - 1; i++) {
+			if (result[i] === '{') braceCount++
+			if (result[i] === '}') {
+				if (braceCount === 0 && result[i + 1] === '}') {
+					foundEnd = true
+					break
+				}
+				braceCount--
+			}
+		}
+
+		if (!foundEnd) {
+			searchStart = styleStart + 1
+			continue
+		}
+
+		// Extract the style object content
+		const styleContent = result.substring(styleStart + 8, i) // +8 for 'style={{'
+
+		// Convert to CSS string
+		const cssString = convertStyleObjectToCSS(styleContent)
+
+		// Replace in result
+		const before = result.substring(0, styleStart)
+		const after = result.substring(i + 2) // +2 for '}}'
+		result = before + `style="${cssString}"` + after
+
+		searchStart = styleStart + cssString.length + 10
+	}
+
+	return result
+}
+
+const convertStyleObjectToCSS = (styleContent: string): string => {
+	try {
+		// Split by commas but respect quotes and nested objects
 		const properties = []
 		let current = ''
 		let inQuotes = false
+		let quoteChar = ''
+		let braceDepth = 0
 
-		for (let i = 0; i < cleaned.length; i++) {
-			const char = cleaned[i]
-			if (char === "'" || char === '"') {
-				inQuotes = !inQuotes
+		for (let i = 0; i < styleContent.length; i++) {
+			const char = styleContent[i]
+
+			if ((char === "'" || char === '"') && styleContent[i - 1] !== '\\') {
+				if (!inQuotes) {
+					inQuotes = true
+					quoteChar = char
+				} else if (char === quoteChar) {
+					inQuotes = false
+				}
 			}
-			if (char === ',' && !inQuotes) {
-				properties.push(current.trim())
+
+			if (!inQuotes) {
+				if (char === '{') braceDepth++
+				if (char === '}') braceDepth--
+			}
+
+			if (char === ',' && !inQuotes && braceDepth === 0) {
+				if (current.trim()) properties.push(current.trim())
 				current = ''
 			} else {
 				current += char
 			}
 		}
-		if (current.trim()) {
-			properties.push(current.trim())
-		}
+		if (current.trim()) properties.push(current.trim())
 
-		// Convert each property
+		// Convert each property from JS to CSS
 		const cssProperties = properties.map(prop => {
-			const [key, ...valueParts] = prop.split(':')
-			let value = valueParts.join(':').trim()
+			const colonIndex = prop.indexOf(':')
+			if (colonIndex === -1) return ''
 
-			// Remove quotes
+			const key = prop.substring(0, colonIndex).trim()
+			let value = prop.substring(colonIndex + 1).trim()
+
+			// Remove quotes around values
 			value = value.replace(/^['"]/, '').replace(/['"]$/, '')
 
 			// Convert camelCase to kebab-case
-			const cssKey = key.trim().replace(/([A-Z])/g, '-$1').toLowerCase()
+			const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase()
 
 			return `${cssKey}: ${value}`
-		}).join('; ')
+		}).filter(Boolean).join('; ')
 
-		return `style="${cssProperties}"`
+		return cssProperties
 	} catch (error) {
-		console.error('Error converting style:', error)
-		return styleStr
+		console.error('Error converting style object:', error)
+		return ''
 	}
 }
 
@@ -110,12 +169,10 @@ const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 			html = html.replace(/className=/g, "class=")
 
 			// Convert JSX inline styles style={{...}} to HTML style="..."
-			html = html.replace(/style=\{\{([^}]+)\}\}/g, (match) => {
-				return convertStyleObjectToString(match)
-			})
+			html = convertJSXStylesToHTML(html)
 
-			// Remove self-closing tags that aren't valid HTML
-			html = html.replace(/<(\w+)([^>]*?)\s*\/>/g, "<$1$2></$1>")
+			// Remove self-closing tags that aren't valid HTML (except img, br, hr, input)
+			html = html.replace(/<(div|span|p|h1|h2|h3|h4|h5|h6|a|button|section|article|header|footer|nav|main|aside)([^>]*?)\s*\/>/g, "<$1$2></$1>")
 
 			// Extract just the JSX return value if it's in a component
 			const returnMatch = html.match(/return\s*\(([\s\S]*)\);?\s*\}?\s*$/m)
