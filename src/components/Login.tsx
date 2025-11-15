@@ -37,7 +37,11 @@ const Login = () => {
 	const handleGuestSignIn = () => {
 		console.log("👤 User clicked guest sign-in button")
 		signInAsGuest()
-		messageApi.success({ content: "تم تسجيل الدخول كضيف", duration: 2 })
+		messageApi.success({ content: "تم تسجيل الدخول كضيف", duration: 1 })
+		// Force full page reload to dashboard
+		setTimeout(() => {
+			window.location.href = "/dashboard"
+		}, 1000)
 	}
 
 	return (
