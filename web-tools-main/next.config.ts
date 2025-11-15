@@ -1,10 +1,13 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-	// Ensure proper routing for client-side navigation
+	// Ensure proper routing and output for Vercel
 	trailingSlash: false,
-	// Skip trailing slash redirect to avoid 404s
-	skipTrailingSlashRedirect: true,
+	skipTrailingSlashRedirect: false,
+	// Ensure rewrites work correctly
+	async rewrites() {
+		return []
+	},
 }
 
 export default nextConfig
