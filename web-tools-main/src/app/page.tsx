@@ -8,6 +8,9 @@ import { getGreetingEmoji } from "@/utils/helpers"
 
 const { Title } = Typography
 
+// Force dynamic rendering
+export const dynamic = "force-dynamic"
+
 export default function Home() {
 	const { user } = useAuth()
 	const router = useRouter()
