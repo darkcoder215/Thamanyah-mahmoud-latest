@@ -33,7 +33,6 @@ const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 
 			// Step 2: Replace {formData.field} placeholders with actual values
 			console.log("📝 Replacing form data placeholders...")
-
 			html = html.replace(/\{formData\.(\w+)\}/g, (match, fieldName) => {
 				const value = formData[fieldName as keyof JobOfferFormData]
 
@@ -51,9 +50,34 @@ const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 				return String(value || "")
 			})
 
+			// Step 3: Convert JSX to HTML
+			console.log("🔄 Converting JSX to HTML...")
+
+			// Remove import statements
+			html = html.replace(/import\s+.+from\s+['"].+['"];?\s*/g, "")
+
+			// Remove export statements
+			html = html.replace(/export\s+(default\s+)?/g, "")
+
+			// Convert className to class
+			html = html.replace(/className=/g, "class=")
+
+			// Remove self-closing tags that aren't valid HTML
+			html = html.replace(/<(\w+)([^>]*?)\s*\/>/g, "<$1$2></$1>")
+
+			// Extract just the JSX return value if it's in a component
+			const returnMatch = html.match(/return\s*\(([\s\S]*)\);?\s*\}?\s*$/m)
+			if (returnMatch) {
+				html = returnMatch[1]
+			}
+
+			// Remove any remaining function wrapper
+			html = html.replace(/^.*?=>\s*{?\s*/m, "")
+			html = html.replace(/^.*?function.*?\{?\s*/m, "")
+
 			console.log("✅ Template rendering complete!")
 
-			return html
+			return html.trim()
 		} catch (error) {
 			console.error("❌ Error rendering template:", error)
 			return `<div class="text-red-500">خطأ في عرض القالب: ${error instanceof Error ? error.message : "خطأ غير معروف"}</div>`

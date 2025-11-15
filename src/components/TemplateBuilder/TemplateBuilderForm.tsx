@@ -96,12 +96,12 @@ const TemplateBuilderForm: React.FC<{
 	const generatePreviewHTML = (): string => {
 		let html = code
 
-		// Replace asset placeholders with uploaded images
+		// Step 1: Replace asset placeholders with uploaded images
 		Object.entries(assets).forEach(([placeholder, uploadedUrl]) => {
 			html = html.replace(new RegExp(`src=["']${placeholder}["']`, "g"), `src="${uploadedUrl}"`)
 		})
 
-		// Replace formData placeholders with sample data for preview
+		// Step 2: Replace formData placeholders with sample data
 		const sampleData = {
 			name: "أحمد محمد",
 			jobTitle: "مدير منتج",
@@ -113,7 +113,30 @@ const TemplateBuilderForm: React.FC<{
 			html = html.replace(new RegExp(`\\{formData\\.${key}\\}`, "g"), value)
 		})
 
-		return html
+		// Step 3: Convert JSX to HTML for preview
+		// Remove import statements
+		html = html.replace(/import\s+.+from\s+['"].+['"];?\s*/g, "")
+
+		// Remove export statements
+		html = html.replace(/export\s+(default\s+)?/g, "")
+
+		// Convert className to class
+		html = html.replace(/className=/g, "class=")
+
+		// Remove self-closing tags that aren't valid HTML
+		html = html.replace(/<(\w+)([^>]*?)\s*\/>/g, "<$1$2></$1>")
+
+		// Extract just the JSX return value if it's in a component
+		const returnMatch = html.match(/return\s*\(([\s\S]*)\);?\s*\}?\s*$/m)
+		if (returnMatch) {
+			html = returnMatch[1]
+		}
+
+		// Remove any remaining function wrapper
+		html = html.replace(/^.*?=>\s*{?\s*/m, "")
+		html = html.replace(/^.*?function.*?\{?\s*/m, "")
+
+		return html.trim()
 	}
 
 	return (
