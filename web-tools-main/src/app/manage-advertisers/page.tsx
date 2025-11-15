@@ -16,18 +16,26 @@ interface Post {
 
 async function fetchExternalPosts(): Promise<Post[]> {
 	if (!id || !range) {
-		throw new Error("Missing spreadsheet configuration")
+		console.warn("⚠️ Google Sheets spreadsheet configuration not found. External posts will not be available.")
+		console.log("💡 Set NEXT_PUBLIC_POSTS_SPREADSHEET_ID and NEXT_PUBLIC_POSTS_SHEET_RANGE to enable this feature.")
+		return []
 	}
-	const data = await getSpreadsheetData(id, range)
-	if (!data) return []
 
-	return data.map((row) => ({
-		postId: row.postId || "",
-		title: row.title || "",
-		advertiser_name: row.advertiser_name,
-		productHandle: row.productHandle || "",
-		productName: row.productName || "",
-	}))
+	try {
+		const data = await getSpreadsheetData(id, range)
+		if (!data) return []
+
+		return data.map((row) => ({
+			postId: row.postId || "",
+			title: row.title || "",
+			advertiser_name: row.advertiser_name,
+			productHandle: row.productHandle || "",
+			productName: row.productName || "",
+		}))
+	} catch (error) {
+		console.error("❌ Error fetching spreadsheet data:", error)
+		return []
+	}
 }
 
 export default async function Page() {
