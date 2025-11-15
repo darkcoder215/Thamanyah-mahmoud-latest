@@ -1,4 +1,4 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useState } from "react"
 import { type JobOfferFormData, type JobOfferFormProps } from "../Form/JobOfferFormTypes"
 import { managers } from "../Form/ManagerSign"
 import Cover from "../Form/Preview/Cover"
@@ -7,6 +7,9 @@ import PreviewActions from "../Shared/PreviewActions"
 import TempBasicInfoPage from "../TempOffer/Preview/BasicInfoPage"
 import BasicInfoPage from "./Preview/BasicInfoPage"
 import SalaryPage from "./Preview/SalaryPage"
+import CustomTemplateRenderer from "./CustomTemplateRenderer"
+import { CustomTemplate } from "@/components/TemplateBuilder/TemplateBuilderForm"
+import { Alert } from "antd"
 
 interface JobOfferPreviewProps {
 	formData: JobOfferFormData
@@ -15,6 +18,23 @@ interface JobOfferPreviewProps {
 }
 
 const JobOfferPreview: React.FC<JobOfferPreviewProps> = ({ formData, levels, onEdit }) => {
+	const [customTemplate, setCustomTemplate] = useState<CustomTemplate | null>(null)
+
+	// Load custom template if theme is custom
+	useEffect(() => {
+		if (formData.theme === "custom" && formData.customTemplateId) {
+			const stored = localStorage.getItem("customTemplates")
+			if (stored) {
+				try {
+					const templates: CustomTemplate[] = JSON.parse(stored)
+					const template = templates.find((t) => t.id === formData.customTemplateId)
+					setCustomTemplate(template || null)
+				} catch (error) {
+					console.error("Error loading custom template:", error)
+				}
+			}
+		}
+	}, [formData.theme, formData.customTemplateId])
 	const handleFileUpload = async (file: File) => {
 		const data = new FormData()
 		data.append("pdf", file)
@@ -39,6 +59,48 @@ const JobOfferPreview: React.FC<JobOfferPreviewProps> = ({ formData, levels, onE
 		? managers.find((m) => m.value === formData.managerSignName)
 		: null
 
+	// Render custom template if selected
+	if (formData.theme === "custom") {
+		if (!customTemplate) {
+			return (
+				<>
+					<Alert
+						message="خطأ في تحميل القالب"
+						description="لم يتم العثور على القالب المخصص المحدد. الرجاء اختيار قالب آخر أو العودة للتعديل."
+						type="error"
+						showIcon
+						className="m-6"
+					/>
+					<PreviewActions
+						onEdit={onEdit}
+						onFileUpload={handleFileUpload}
+						email={formData.email}
+					/>
+				</>
+			)
+		}
+
+		return (
+			<>
+				<div className="overflow-x-auto">
+					<Cover
+						forLeague={false}
+						name={formData.name}
+						title={formData.contractType === "employment" ? "عرض وظيفي" : "عرض تعاوني"}
+					/>
+					<CustomTemplateRenderer template={customTemplate} formData={formData} />
+					<Outro />
+				</div>
+				<PreviewActions
+					onEdit={onEdit}
+					onFileUpload={handleFileUpload}
+					email={formData.email}
+				/>
+			</>
+		)
+	}
+
+	// Default rendering for general and league themes
 	return (
 		<>
 			<div className={`overflow-x-auto ${formData.theme === "league" ? "theme-league" : ""}`}>

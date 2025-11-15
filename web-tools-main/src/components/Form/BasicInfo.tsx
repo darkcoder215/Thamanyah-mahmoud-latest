@@ -1,13 +1,27 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import Image from "next/image"
 import { InboxOutlined } from "@ant-design/icons"
-import { Form, Input, Radio, Select, Upload, message } from "antd"
+import { Form, Input, Radio, Select, Upload, message, Alert } from "antd"
 import { type JobOfferFormProps } from "./JobOfferFormTypes"
 import ManagerSign from "./ManagerSign"
+import { CustomTemplate } from "@/components/TemplateBuilder/TemplateBuilderForm"
 
 const { Option } = Select
 
 const BasicInfo: React.FC<JobOfferFormProps> = ({ formData, setFormData, levels }) => {
+	const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([])
+
+	// Load custom templates from localStorage
+	useEffect(() => {
+		const stored = localStorage.getItem("customTemplates")
+		if (stored) {
+			try {
+				setCustomTemplates(JSON.parse(stored))
+			} catch (error) {
+				console.error("Error loading custom templates:", error)
+			}
+		}
+	}, [])
 	return (
 		<>
 			{/* ========== GROUP 1: Document Configuration ========== */}
@@ -74,15 +88,70 @@ const BasicInfo: React.FC<JobOfferFormProps> = ({ formData, setFormData, levels 
 					options={[
 						{ value: "general", label: "عام" },
 						{ value: "league", label: "دوري ⚽" },
+						{ value: "custom", label: "قالب مخصص 🎨" },
 					]}
 					onChange={(e) => {
 						setFormData({
 							...formData,
 							theme: e.target.value,
+							customTemplateId: undefined, // Reset custom template when changing theme
 						})
 					}}
 				/>
 			</Form.Item>
+
+			{/* Custom template selector */}
+			{formData.theme === "custom" && (
+				<Form.Item
+					label="اختر القالب المخصص"
+					name="customTemplateId"
+					rules={[
+						{
+							required: true,
+							message: "الرجاء اختيار قالب مخصص",
+						},
+					]}
+				>
+					{customTemplates.length === 0 ? (
+						<Alert
+							message="لا توجد قوالب مخصصة"
+							description={
+								<span>
+									قم بإنشاء قالب مخصص من صفحة{" "}
+									<a href="/custom-templates" target="_blank">
+										إدارة القوالب المخصصة
+									</a>
+								</span>
+							}
+							type="warning"
+							showIcon
+						/>
+					) : (
+						<Select
+							value={formData.customTemplateId}
+							onChange={(value) =>
+								setFormData({
+									...formData,
+									customTemplateId: value,
+								})
+							}
+							placeholder="اختر قالبًا من القائمة"
+						>
+							{customTemplates.map((template) => (
+								<Option key={template.id} value={template.id}>
+									{template.name}
+									{template.description && (
+										<span className="text-xs text-gray-500">
+											{" "}
+											- {template.description}
+										</span>
+									)}
+								</Option>
+							))}
+						</Select>
+					)}
+				</Form.Item>
+			)}
 
 			{/* Image upload for league theme */}
 			{formData.theme === "league" && (

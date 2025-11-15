@@ -1,6 +1,7 @@
 export type JobOfferFormData = {
 	offerType: "managerial" | "technical" | "general"
-	theme: "general" | "league"
+	theme: "general" | "league" | "custom"
+	customTemplateId?: string
 	name: string
 	email: string
 	jobTitle: string
