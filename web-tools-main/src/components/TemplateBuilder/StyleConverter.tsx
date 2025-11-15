@@ -259,10 +259,10 @@ const StyleConverter: React.FC<StyleConverterProps> = ({ figmaCode, onConvert, o
 						// Convert to React inline style object
 						const styleEntries = styleContent
 							.split(";")
-							.filter((s) => s.trim())
-							.map((s) => {
-								const [key, value] = s.split(":").map((x) => x.trim())
-								const camelKey = key.replace(/-([a-z])/g, (g) => g[1].toUpperCase())
+							.filter((s: string) => s.trim())
+							.map((s: string) => {
+								const [key, value] = s.split(":").map((x: string) => x.trim())
+								const camelKey = key.replace(/-([a-z])/g, (g: string) => g[1].toUpperCase())
 								return `${camelKey}: '${value}'`
 							})
 							.join(", ")

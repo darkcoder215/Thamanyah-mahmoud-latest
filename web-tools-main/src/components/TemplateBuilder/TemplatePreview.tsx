@@ -93,8 +93,8 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({
 
 		// Remove React/Next.js specific parts for HTML preview
 		html = html.replace(/import .+;/g, "")
-		html = html.replace(/interface .+{[^}]+}/gs, "")
-		html = html.replace(/const CustomTemplate.+= \(\{[^}]+\}\) => \{/gs, "")
+		html = html.replace(/interface .+\{[\s\S]+?\}/g, "")
+		html = html.replace(/const CustomTemplate[\s\S]+?= \(\{[^}]+\}\) => \{/g, "")
 		html = html.replace(/return \(/g, "")
 		html = html.replace(/\}\s*export default CustomTemplate/g, "")
 		html = html.replace(/<Image /g, "<img ")

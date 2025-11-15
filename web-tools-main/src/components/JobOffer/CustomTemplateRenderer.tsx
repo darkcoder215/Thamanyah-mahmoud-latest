@@ -45,11 +45,16 @@ const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 				if (field.startsWith("formData.")) {
 					// Extract the field name
 					const fieldName = field.replace("formData.", "") as keyof JobOfferFormData
-					let value = formData[fieldName]
+					let value: string | number | boolean | string[] | undefined = formData[fieldName]
 
-					// Format numbers if needed
+					// Format numbers if needed (converts number to formatted string)
 					if (typeof value === "number") {
-						value = formatNumbers(value) as typeof value
+						value = formatNumbers(value)
+					}
+
+					// Convert arrays to comma-separated strings
+					if (Array.isArray(value)) {
+						value = value.join(", ")
 					}
 
 					console.log(`📌 Mapping: ${placeholder} → ${field} = ${value}`)
@@ -89,10 +94,10 @@ const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 			// Step 3: Clean up React/Component syntax for rendering
 			console.log("🧹 Cleaning up code for rendering...")
 			html = html.replace(/import .+;/g, "")
-			html = html.replace(/interface .+\{[^}]+\}/gs, "")
-			html = html.replace(/const CustomTemplate.+ = \(.+\) => \{/gs, "")
+			html = html.replace(/interface .+\{[\s\S]+?\}/g, "")
+			html = html.replace(/const CustomTemplate[\s\S]+? = \([\s\S]+?\) => \{/g, "")
 			html = html.replace(/return \(/g, "")
-			html = html.replace(/\}\s*export default CustomTemplate/gs, "")
+			html = html.replace(/\}\s*export default CustomTemplate/g, "")
 
 			// Fix Image components for HTML rendering
 			html = html.replace(
