@@ -46,6 +46,10 @@ interface BackgroundPage {
 export default function TailwindTemplateBuilder() {
 	const [currentStep, setCurrentStep] = useState(0)
 
+	// JSX Import
+	const [jsxCode, setJsxCode] = useState("")
+	const [importMode, setImportMode] = useState<"jsx" | "manual" | null>(null)
+
 	// Step 1: Background and pages
 	const [numberOfPages, setNumberOfPages] = useState(1)
 	const [backgroundPages, setBackgroundPages] = useState<BackgroundPage[]>([])
@@ -113,6 +117,84 @@ export default function TailwindTemplateBuilder() {
 			setCurrentStep(3)
 		} catch (error) {
 			message.error("خطأ في تحليل أنماط الألوان. تأكد من التنسيق الصحيح")
+		}
+	}
+
+	// Parse JSX code to extract text elements with positions
+	const parseJSXCode = () => {
+		try {
+			const elements: TextElement[] = []
+			const stylesMap = new Map<string, number>()
+			const newStyles: TextStyle[] = []
+
+			// Extract all div elements with text content
+			const divRegex = /<div\s+className="([^"]+)"[^>]*>([^<]+)<\/div>/g
+			let match
+
+			while ((match = divRegex.exec(jsxCode)) !== null) {
+				const className = match[1]
+				const textContent = match[2].trim()
+
+				// Skip if no text content or just whitespace/emojis
+				if (!textContent || textContent.length === 0) continue
+				if (/^[\s👋🏻]+$/.test(textContent)) continue
+
+				// Extract position from className
+				const leftMatch = className.match(/left-\[(\d+)px\]/)
+				const topMatch = className.match(/top-\[(\d+)px\]/)
+
+				if (!leftMatch || !topMatch) continue
+
+				const x = parseInt(leftMatch[1])
+				const y = parseInt(topMatch[1])
+
+				// Extract text style classes (all classes related to text appearance)
+				const classes = className.split(/\s+/).filter(cls =>
+					cls.startsWith('text-') ||
+					cls.startsWith('font-') ||
+					cls.startsWith('leading-') ||
+					cls.startsWith('tracking-') ||
+					cls.startsWith('justify-')
+				)
+
+				const classesKey = classes.join(' ')
+
+				// Find or create style index
+				let styleIndex = stylesMap.get(classesKey)
+				if (styleIndex === undefined) {
+					styleIndex = newStyles.length
+					stylesMap.set(classesKey, styleIndex)
+					newStyles.push({
+						name: textContent.substring(0, 20) + (textContent.length > 20 ? '...' : ''),
+						classes: classes
+					})
+				}
+
+				elements.push({
+					id: `text-${Date.now()}-${elements.length}`,
+					content: textContent,
+					styleIndex: styleIndex,
+					x: x,
+					y: y,
+					mappedField: "",
+					pageNumber: 1
+				})
+			}
+
+			if (elements.length === 0) {
+				message.warning("لم يتم العثور على عناصر نصية في الكود. تأكد من تنسيق JSX الصحيح")
+				return
+			}
+
+			setTextElements(elements)
+			setTextStyles(newStyles)
+			message.success(`تم استخراج ${elements.length} عنصر نصي بنجاح!`)
+
+			// Auto-advance to next step
+			setCurrentStep(1)
+		} catch (error) {
+			console.error("JSX parsing error:", error)
+			message.error("خطأ في تحليل كود JSX. تأكد من التنسيق الصحيح")
 		}
 	}
 
@@ -262,21 +344,124 @@ export default function TailwindTemplateBuilder() {
 
 	return (
 		<div style={{ padding: 24 }}>
-			<Steps
-				current={currentStep}
-				items={[
-					{ title: "الخلفية" },
-					{ title: "أنماط النصوص" },
-					{ title: "أنماط الألوان" },
-					{ title: "عناصر النص" },
-					{ title: "ربط الحقول" },
-					{ title: "الحفظ" },
-				]}
-				style={{ marginBottom: 32 }}
-			/>
+			{/* Initial mode selection */}
+			{importMode === null && (
+				<Card title="اختر طريقة إنشاء القالب">
+					<div style={{ display: 'flex', gap: 16, justifyContent: 'center', padding: 24 }}>
+						<Card
+							hoverable
+							style={{ width: 300, textAlign: 'center' }}
+							onClick={() => setImportMode("jsx")}
+						>
+							<div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
+							<h3>استيراد كود Tailwind JSX</h3>
+							<p style={{ color: '#666', fontSize: 13 }}>
+								الصق كود JSX من Figma مباشرة<br/>
+								سيتم استخراج المواضع والأنماط تلقائياً
+							</p>
+							<div style={{ marginTop: 16, padding: 8, background: '#e6f7ff', borderRadius: 4, fontSize: 12 }}>
+								⚡ أسرع وأسهل
+							</div>
+						</Card>
 
-			{/* Step 0: Upload Background */}
-			{currentStep === 0 && (
+						<Card
+							hoverable
+							style={{ width: 300, textAlign: 'center' }}
+							onClick={() => {
+								setImportMode("manual")
+								setCurrentStep(0)
+							}}
+						>
+							<div style={{ fontSize: 48, marginBottom: 16 }}>🎨</div>
+							<h3>طريقة يدوية</h3>
+							<p style={{ color: '#666', fontSize: 13 }}>
+								رفع خلفية + إضافة النصوص يدوياً<br/>
+								تحكم كامل في كل عنصر
+							</p>
+							<div style={{ marginTop: 16, padding: 8, background: '#fff7e6', borderRadius: 4, fontSize: 12 }}>
+								🎯 تحكم كامل
+							</div>
+						</Card>
+					</div>
+				</Card>
+			)}
+
+			{/* JSX Import Mode */}
+			{importMode === "jsx" && currentStep === 0 && (
+				<Card title="استيراد كود Tailwind JSX">
+					<div style={{ marginBottom: 16, padding: 12, background: '#e6f7ff', borderRadius: 4 }}>
+						<strong>📋 كيفية الحصول على كود JSX من Figma:</strong>
+						<ol style={{ marginTop: 8, marginBottom: 0, paddingRight: 20 }}>
+							<li>افتح Figma وحدد الإطار (Frame)</li>
+							<li>اضغط على <strong>Dev Mode</strong> في الأعلى</li>
+							<li>من القائمة المنسدلة، اختر <strong>Tailwind CSS</strong></li>
+							<li>انسخ الكود كاملاً والصقه أدناه</li>
+						</ol>
+					</div>
+
+					<TextArea
+						value={jsxCode}
+						onChange={(e) => setJsxCode(e.target.value)}
+						placeholder='<div className="w-[595px] h-[842px]">
+  <div className="left-[261px] top-[238px] absolute text-black">مدير محتوى</div>
+  ...
+</div>'
+						rows={20}
+						style={{ fontFamily: "monospace", fontSize: 12, marginBottom: 16 }}
+					/>
+
+					<div style={{ marginBottom: 16, padding: 12, background: '#fff7e6', borderRadius: 4 }}>
+						<strong>💡 ما الذي سيحدث:</strong>
+						<ul style={{ marginTop: 8, marginBottom: 0, paddingRight: 20 }}>
+							<li>سيتم استخراج جميع النصوص تلقائياً</li>
+							<li>سيتم قراءة المواضع من <code>left-[XXpx]</code> و <code>top-[XXpx]</code></li>
+							<li>سيتم تجميع الأنماط المتشابهة</li>
+							<li>ستحتاج فقط لرفع الخلفية وربط الحقول</li>
+						</ul>
+					</div>
+
+					<Space>
+						<Button onClick={() => setImportMode(null)}>
+							← العودة
+						</Button>
+						<Button
+							type="primary"
+							size="large"
+							onClick={parseJSXCode}
+							disabled={!jsxCode.trim()}
+						>
+							تحليل واستخراج النصوص →
+						</Button>
+					</Space>
+				</Card>
+			)}
+
+			{/* Show steps only after mode is selected and not on initial JSX import step */}
+			{importMode !== null && !(importMode === "jsx" && currentStep === 0) && (
+				<Steps
+					current={importMode === "jsx" ? currentStep - 1 : currentStep}
+					items={
+						importMode === "jsx"
+							? [
+									{ title: "الخلفية" },
+									{ title: "ربط الحقول" },
+									{ title: "الحفظ" },
+							  ]
+							: [
+									{ title: "الخلفية" },
+									{ title: "أنماط النصوص" },
+									{ title: "أنماط الألوان" },
+									{ title: "عناصر النص" },
+									{ title: "ربط الحقول" },
+									{ title: "الحفظ" },
+							  ]
+					}
+					style={{ marginBottom: 32 }}
+				/>
+			)}
+
+			{/* Step 0: Upload Background (for manual mode) */}
+			{importMode === "manual" && currentStep === 0 && (
 				<Card title="الخطوة 1: استيراد خلفية التصميم">
 					<div style={{ marginBottom: 24 }}>
 						<label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
@@ -340,8 +525,67 @@ export default function TailwindTemplateBuilder() {
 				</Card>
 			)}
 
-			{/* Step 1: Text Styles */}
-			{currentStep === 1 && (
+			{/* Step 1 (JSX Mode): Upload Background */}
+			{importMode === "jsx" && currentStep === 1 && (
+				<Card title="رفع خلفية التصميم">
+					<div style={{ marginBottom: 16, padding: 12, background: '#fff7e6', borderRadius: 4 }}>
+						<strong>✅ تم استخراج {textElements.length} عنصر نصي بنجاح!</strong>
+						<div style={{ marginTop: 8, fontSize: 13 }}>
+							الآن ارفع صورة الخلفية (بدون النصوص) لكي تظهر النصوص عليها
+						</div>
+					</div>
+
+					<div style={{ marginBottom: 16 }}>
+						<Upload
+							accept="image/*"
+							showUploadList={false}
+							beforeUpload={(file) => handleBackgroundUpload(file, 1)}
+						>
+							<Button icon={<UploadOutlined />} type={backgroundPages.length > 0 ? "default" : "primary"} size="large">
+								{backgroundPages.length > 0 ? "✓ تم الرفع - انقر للتغيير" : "رفع خلفية التصميم"}
+							</Button>
+						</Upload>
+						{backgroundPages.length > 0 && (
+							<div style={{ marginTop: 16 }}>
+								<img src={backgroundPages[0].imageUrl} alt="خلفية" style={{ maxWidth: 400, border: '2px solid #1890ff', borderRadius: 8 }} />
+							</div>
+						)}
+					</div>
+
+					<div style={{ marginBottom: 16, padding: 12, background: '#e6f7ff', borderRadius: 4 }}>
+						<strong>📊 العناصر المستخرجة:</strong>
+						<div style={{ marginTop: 8, maxHeight: 200, overflowY: 'auto' }}>
+							{textElements.slice(0, 10).map((el, idx) => (
+								<div key={idx} style={{ fontSize: 12, padding: 4, background: '#fff', margin: '4px 0', borderRadius: 4 }}>
+									<strong>{el.content}</strong> - الموضع: ({el.x}, {el.y})
+								</div>
+							))}
+							{textElements.length > 10 && (
+								<div style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
+									... و {textElements.length - 10} عنصر آخر
+								</div>
+							)}
+						</div>
+					</div>
+
+					<Space>
+						<Button onClick={() => setCurrentStep(0)}>
+							← السابق
+						</Button>
+						<Button
+							type="primary"
+							size="large"
+							onClick={() => setCurrentStep(2)}
+							disabled={backgroundPages.length === 0}
+						>
+							التالي: ربط الحقول →
+						</Button>
+					</Space>
+				</Card>
+			)}
+
+			{/* Step 1 (Manual Mode): Text Styles */}
+			{importMode === "manual" && currentStep === 1 && (
 				<Card title="الخطوة 2: إدخال أنماط النصوص من Figma">
 					<div style={{ marginBottom: 16, padding: 12, background: '#e6f7ff', borderRadius: 4 }}>
 						<strong>📋 كيفية الحصول على أنماط النصوص من Figma:</strong>
@@ -570,46 +814,48 @@ F2EEE4; // بيج`}
 				</Card>
 			)}
 
-			{/* Step 4: Map Fields */}
-			{currentStep === 4 && (
-				<Card title="الخطوة 5: ربط عناصر النص بحقول البيانات">
+			{/* Step 2 (JSX Mode) / Step 4 (Manual Mode): Map Fields */}
+			{((importMode === "jsx" && currentStep === 2) || (importMode === "manual" && currentStep === 4)) && (
+				<Card title={importMode === "jsx" ? "ربط عناصر النص بحقول البيانات" : "الخطوة 5: ربط عناصر النص بحقول البيانات"}>
 					<div style={{ marginBottom: 16, padding: 12, background: '#fff7e6', borderRadius: 4 }}>
 						<strong>🔗 اربط كل عنصر نص بحقل من البيانات</strong>
 						<div style={{ marginTop: 4, fontSize: 12 }}>
-							اترك "لا تربط" إذا كان النص ثابتاً ولا يتغير
+							اترك "لا تربط" إذا كان النص ثابتاً ولا يتغير (مثل "المسمّى الوظيفي:", "الفريق:")
 						</div>
 					</div>
 
-					{textElements.map(el => (
-						<div key={el.id} style={{ marginBottom: 16, padding: 12, background: '#f5f5f5', borderRadius: 4 }}>
-							<div style={{ marginBottom: 8 }}>
-								<strong>النص:</strong> "{el.content}" | <strong>الصفحة:</strong> {el.pageNumber}
+					<div style={{ maxHeight: 500, overflowY: 'auto' }}>
+						{textElements.map(el => (
+							<div key={el.id} style={{ marginBottom: 16, padding: 12, background: '#f5f5f5', borderRadius: 4 }}>
+								<div style={{ marginBottom: 8 }}>
+									<strong>النص:</strong> "{el.content}" | <strong>الموضع:</strong> ({el.x}, {el.y})
+								</div>
+								<Select
+									value={el.mappedField}
+									onChange={(val) => updateTextElement(el.id, { mappedField: val })}
+									style={{ width: '100%' }}
+								>
+									{availableFields.map(field => (
+										<Select.Option key={field.value} value={field.value}>
+											{field.label}
+										</Select.Option>
+									))}
+								</Select>
 							</div>
-							<Select
-								value={el.mappedField}
-								onChange={(val) => updateTextElement(el.id, { mappedField: val })}
-								style={{ width: '100%' }}
-							>
-								{availableFields.map(field => (
-									<Select.Option key={field.value} value={field.value}>
-										{field.label}
-									</Select.Option>
-								))}
-							</Select>
-						</div>
-					))}
+						))}
+					</div>
 
 					<Space style={{ marginTop: 16 }}>
-						<Button onClick={() => setCurrentStep(3)}>← السابق</Button>
-						<Button type="primary" size="large" onClick={() => setCurrentStep(5)}>
+						<Button onClick={() => setCurrentStep(importMode === "jsx" ? 1 : 3)}>← السابق</Button>
+						<Button type="primary" size="large" onClick={() => setCurrentStep(importMode === "jsx" ? 3 : 5)}>
 							التالي: الحفظ →
 						</Button>
 					</Space>
 				</Card>
 			)}
 
-			{/* Step 5: Save */}
-			{currentStep === 5 && (
+			{/* Step 3 (JSX Mode) / Step 5 (Manual Mode): Save */}
+			{((importMode === "jsx" && currentStep === 3) || (importMode === "manual" && currentStep === 5)) && (
 				<Card title="الخطوة 6: حفظ القالب">
 					<div style={{ marginBottom: 16 }}>
 						<label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
@@ -635,7 +881,7 @@ F2EEE4; // بيج`}
 					</div>
 
 					<Space>
-						<Button onClick={() => setCurrentStep(4)}>← السابق</Button>
+						<Button onClick={() => setCurrentStep(importMode === "jsx" ? 2 : 4)}>← السابق</Button>
 						<Button
 							type="primary"
 							size="large"
