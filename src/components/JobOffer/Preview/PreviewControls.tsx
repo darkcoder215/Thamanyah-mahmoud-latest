@@ -1,91 +1,67 @@
 "use client"
 
 import React, { useState } from "react"
-import { Button, InputNumber, Space, Card } from "antd"
+import { Button, Space, Alert } from "antd"
 
 interface PreviewControlsProps {
 	onEditModeToggle: (enabled: boolean) => void
 	onScaleChange: (scale: number) => void
 }
 
-export default function PreviewControls({ onEditModeToggle, onScaleChange }: PreviewControlsProps) {
+export default function PreviewControls({ onEditModeToggle }: PreviewControlsProps) {
 	const [editMode, setEditMode] = useState(false)
-	const [figmaWidth, setFigmaWidth] = useState(595) // Default A4 @ 72dpi
-	const [figmaHeight, setFigmaHeight] = useState(842)
-	const [scale, setScale] = useState(1)
-
-	const A4_WIDTH_PX = 595 // 210mm @ 72dpi
-	const A4_HEIGHT_PX = 842 // 297mm @ 72dpi
-
-	const calculateScale = () => {
-		const scaleX = A4_WIDTH_PX / figmaWidth
-		const scaleY = A4_HEIGHT_PX / figmaHeight
-		const newScale = Math.min(scaleX, scaleY)
-		setScale(newScale)
-		onScaleChange(newScale)
-	}
 
 	return (
-		<Card
-			className="hide-print mb-4"
-			title="🛠️ Preview Controls"
-			size="small"
-			style={{ maxWidth: 800, margin: '0 auto' }}
-		>
-			<Space direction="vertical" style={{ width: '100%' }}>
-				<Space>
-					<Button
-						type={editMode ? "primary" : "default"}
-						onClick={() => {
-							const newMode = !editMode
-							setEditMode(newMode)
-							onEditModeToggle(newMode)
-						}}
-					>
-						{editMode ? "✓ Exit Edit Mode" : "✏️ Enable Edit Mode"}
-					</Button>
-					{editMode && (
-						<span style={{ fontSize: 12, color: '#666' }}>
-							Double-click any element to drag it. Click ✓ to lock position.
-						</span>
-					)}
-				</Space>
+		<div className="hide-print mb-6" style={{ maxWidth: 800, margin: '0 auto' }}>
+			<Alert
+				message={
+					<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+						<div>
+							<strong style={{ fontSize: 16 }}>🛠️ Edit Mode</strong>
+							<div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+								{editMode
+									? "All elements are now draggable! Drag them to reposition. New positions will be logged to console."
+									: "Click the button to make all elements draggable and adjustable."}
+							</div>
+						</div>
+						<Button
+							type={editMode ? "primary" : "default"}
+							size="large"
+							danger={editMode}
+							onClick={() => {
+								const newMode = !editMode
+								setEditMode(newMode)
+								onEditModeToggle(newMode)
+							}}
+							style={{ marginLeft: 16 }}
+						>
+							{editMode ? "✓ Exit Edit Mode" : "✏️ Enable Edit Mode"}
+						</Button>
+					</div>
+				}
+				type={editMode ? "success" : "info"}
+				showIcon={false}
+				style={{ border: `2px solid ${editMode ? '#ff6b00' : '#1890ff'}` }}
+			/>
 
-				<Space>
-					<span>Figma Frame Width (px):</span>
-					<InputNumber
-						min={100}
-						max={2000}
-						value={figmaWidth}
-						onChange={(val) => setFigmaWidth(val || 595)}
-					/>
-					<span>Height (px):</span>
-					<InputNumber
-						min={100}
-						max={3000}
-						value={figmaHeight}
-						onChange={(val) => setFigmaHeight(val || 842)}
-					/>
-					<Button onClick={calculateScale}>Calculate Scale</Button>
-					{scale !== 1 && (
-						<span style={{ fontSize: 12, color: '#ff6b00', fontWeight: 'bold' }}>
-							Scale: {scale.toFixed(4)}x
-						</span>
-					)}
-				</Space>
-
-				<div style={{ fontSize: 11, color: '#999' }}>
-					<strong>Info:</strong> A4 @ 72dpi = 595×842px | @ 96dpi = 794×1123px | @ 150dpi = 1240×1754px
-				</div>
-
-				<div style={{ fontSize: 11, color: '#666', background: '#f5f5f5', padding: 8, borderRadius: 4 }}>
-					<strong>How to use:</strong><br />
-					1. Enter your Figma frame dimensions above<br />
-					2. Click "Calculate Scale" to see if scaling is needed<br />
-					3. Enable "Edit Mode" to drag elements around<br />
-					4. Copy the new positions from the orange labels
-				</div>
-			</Space>
-		</Card>
+			{editMode && (
+				<Alert
+					message="Instructions"
+					description={
+						<ul style={{ margin: 0, paddingLeft: 20 }}>
+							<li>Click and drag any orange-bordered element to move it</li>
+							<li>See live coordinates (L: left, T: top) and dimensions in the orange bar</li>
+							<li>Click "📁 Upload" on the logo to change the image</li>
+							<li>New positions are logged to browser console for you to copy</li>
+							<li>Check the console (F12) to get the final coordinates</li>
+						</ul>
+					}
+					type="warning"
+					showIcon
+					style={{ marginTop: 12 }}
+					closable
+				/>
+			)}
+		</div>
 	)
 }

@@ -9,6 +9,8 @@ interface CoverPageV2Props {
 }
 
 export default function CoverPageV2({ name, editMode = false, scale = 1 }: CoverPageV2Props) {
+	const [logoSrc, setLogoSrc] = React.useState("/logo.png")
+
 	const formatToday = () => {
 		const date = new Date()
 		const day = date.getDate()
@@ -17,8 +19,6 @@ export default function CoverPageV2({ name, editMode = false, scale = 1 }: Cover
 		return `${day} ${month} ${year}`
 	}
 
-	const Wrapper = editMode ? EditableWrapper : React.Fragment
-
 	return (
 		<div
 			className="page-v2 mb-4 border-0! bg-black! print:bg-black!"
@@ -26,9 +26,17 @@ export default function CoverPageV2({ name, editMode = false, scale = 1 }: Cover
 		>
 			{/* Thmanyah Logo */}
 			{editMode ? (
-				<EditableWrapper initialLeft={195} initialTop={379} label="Logo">
+				<EditableWrapper
+					initialLeft={195}
+					initialTop={379}
+					label="Logo"
+					width={341}
+					height={68}
+					canUploadImage={true}
+					onImageChange={setLogoSrc}
+				>
 					<Image
-						src="/logo.png"
+						src={logoSrc}
 						alt="Thmanyah"
 						width={341}
 						height={68}
@@ -38,7 +46,7 @@ export default function CoverPageV2({ name, editMode = false, scale = 1 }: Cover
 			) : (
 				<div style={{ position: 'absolute', left: 195, top: 379 }}>
 					<Image
-						src="/logo.png"
+						src={logoSrc}
 						alt="Thmanyah"
 						width={341}
 						height={68}
@@ -49,7 +57,13 @@ export default function CoverPageV2({ name, editMode = false, scale = 1 }: Cover
 
 			{/* Name */}
 			{editMode ? (
-				<EditableWrapper initialLeft={406} initialTop={452} label="Name">
+				<EditableWrapper
+					initialLeft={406}
+					initialTop={452}
+					label="Name"
+					width={150}
+					height={35}
+				>
 					<div
 						className="font-8-display text-white"
 						style={{
@@ -80,7 +94,13 @@ export default function CoverPageV2({ name, editMode = false, scale = 1 }: Cover
 
 			{/* Date */}
 			{editMode ? (
-				<EditableWrapper initialLeft={479} initialTop={795} label="Date">
+				<EditableWrapper
+					initialLeft={479}
+					initialTop={795}
+					label="Date"
+					width={100}
+					height={15}
+				>
 					<div
 						className="font-8-sans text-white"
 						style={{
@@ -107,7 +127,13 @@ export default function CoverPageV2({ name, editMode = false, scale = 1 }: Cover
 
 			{/* White icon/rectangle */}
 			{editMode ? (
-				<EditableWrapper initialLeft={56} initialTop={774} label="Icon">
+				<EditableWrapper
+					initialLeft={56}
+					initialTop={774}
+					label="Icon"
+					width={32}
+					height={36}
+				>
 					<div
 						style={{
 							width: 32,
