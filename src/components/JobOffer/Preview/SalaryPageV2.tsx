@@ -1,8 +1,8 @@
 import React from "react"
-import PageFooter from "@/components/Form/Preview/PageFooter"
 import { formatNumbers } from "@/utils/helpers"
 import { type JobOfferFormData } from "../../Form/JobOfferFormTypes"
 import { managers } from "../../Form/ManagerSign"
+import EditableWrapper from "./EditableWrapper"
 
 export default function SalaryPageV2({ formData, editMode = false, scale = 1 }: { formData: JobOfferFormData; editMode?: boolean; scale?: number }) {
 	// Find the selected manager's details
@@ -18,46 +18,106 @@ export default function SalaryPageV2({ formData, editMode = false, scale = 1 }: 
 			}}
 		>
 			{/* Benefits heading */}
-			<div
-				className="font-8-display"
-				style={{
-					left: 286,
-					top: 313,
-					position: 'absolute',
-					textAlign: 'right',
-					color: 'black',
-					fontSize: 24,
-					fontWeight: '900',
-					letterSpacing: 0.79
-				}}
-			>
-				المزايـا الوظيفيـة الإضافيـة
-			</div>
+			{editMode ? (
+				<EditableWrapper
+					initialLeft={286}
+					initialTop={313}
+					label="Benefits Heading"
+					width={261}
+					height={35}
+				>
+					<div
+						className="font-8-display"
+						style={{
+							textAlign: 'right',
+							color: 'black',
+							fontSize: 24,
+							fontWeight: '900',
+							letterSpacing: 0.79
+						}}
+					>
+						المزايـا الوظيفيـة الإضافيـة
+					</div>
+				</EditableWrapper>
+			) : (
+				<div
+					className="font-8-display"
+					style={{
+						left: 286,
+						top: 313,
+						position: 'absolute',
+						textAlign: 'right',
+						color: 'black',
+						fontSize: 24,
+						fontWeight: '900',
+						letterSpacing: 0.79
+					}}
+				>
+					المزايـا الوظيفيـة الإضافيـة
+				</div>
+			)}
 
 			{/* Small black rectangle */}
-			<div
-				style={{
-					width: 32,
-					height: 36,
-					left: 40,
-					top: 766,
-					position: 'absolute',
-					background: 'black'
-				}}
-			/>
+			{editMode ? (
+				<EditableWrapper
+					initialLeft={40}
+					initialTop={766}
+					label="Black Rectangle"
+					width={32}
+					height={36}
+				>
+					<div
+						style={{
+							width: 32,
+							height: 36,
+							background: 'black'
+						}}
+					/>
+				</EditableWrapper>
+			) : (
+				<div
+					style={{
+						width: 32,
+						height: 36,
+						left: 40,
+						top: 766,
+						position: 'absolute',
+						background: 'black'
+					}}
+				/>
+			)}
 
 			{/* Monthly salary box */}
-			<div
-				style={{
-					width: 499,
-					height: 56,
-					left: 48,
-					top: 131,
-					position: 'absolute',
-					background: '#3BC17B',
-					borderRadius: 16
-				}}
-			/>
+			{editMode ? (
+				<EditableWrapper
+					initialLeft={48}
+					initialTop={131}
+					label="Monthly Salary Box"
+					width={499}
+					height={56}
+				>
+					<div
+						style={{
+							width: 499,
+							height: 56,
+							background: '#3BC17B',
+							borderRadius: 16
+						}}
+					/>
+				</EditableWrapper>
+			) : (
+				<div
+					style={{
+						width: 499,
+						height: 56,
+						left: 48,
+						top: 131,
+						position: 'absolute',
+						background: '#3BC17B',
+						borderRadius: 16
+					}}
+				/>
+			)}
 
 			{/* Salary amount with icon */}
 			<div
@@ -101,17 +161,36 @@ export default function SalaryPageV2({ formData, editMode = false, scale = 1 }: 
 			</div>
 
 			{/* Green bar at top */}
-			<div
-				style={{
-					width: 661.48,
-					height: 27.65,
-					left: -18.28,
-					top: -13.11,
-					position: 'absolute',
-					opacity: 0.89,
-					background: '#03BB6E'
-				}}
-			/>
+			{editMode ? (
+				<EditableWrapper
+					initialLeft={-18.28}
+					initialTop={-13.11}
+					label="Green Bar"
+					width={661.48}
+					height={27.65}
+				>
+					<div
+						style={{
+							width: 661.48,
+							height: 27.65,
+							opacity: 0.89,
+							background: '#03BB6E'
+						}}
+					/>
+				</EditableWrapper>
+			) : (
+				<div
+					style={{
+						width: 661.48,
+						height: 27.65,
+						left: -18.28,
+						top: -13.11,
+						position: 'absolute',
+						opacity: 0.89,
+						background: '#03BB6E'
+					}}
+				/>
+			)}
 
 			{/* Salary breakdown box */}
 			<div
@@ -307,109 +386,244 @@ export default function SalaryPageV2({ formData, editMode = false, scale = 1 }: 
 			</div>
 
 			{/* Disclaimer */}
-			<div className="font-8-sans" style={{ left: 309, top: 554, position: 'absolute', textAlign: 'right' }}>
-				<span style={{ color: '#FF0000', fontSize: 8, fontWeight: '300', lineHeight: '21px', letterSpacing: 0.25 }}>
-					*
-				</span>
-				<span style={{ color: 'black', fontSize: 8, fontWeight: '300', lineHeight: '21px', letterSpacing: 0.25 }}>
-					{' '}
-					بالإضافة لجميع مزايا «ثمانية» حسب الدستور الرسمي وهي قابلة للتغيير.
-				</span>
-			</div>
+			{editMode ? (
+				<EditableWrapper
+					initialLeft={309}
+					initialTop={554}
+					label="Disclaimer"
+					width={238}
+					height={21}
+				>
+					<div className="font-8-sans" style={{ textAlign: 'right' }}>
+						<span style={{ color: '#FF0000', fontSize: 8, fontWeight: '300', lineHeight: '21px', letterSpacing: 0.25 }}>
+							*
+						</span>
+						<span style={{ color: 'black', fontSize: 8, fontWeight: '300', lineHeight: '21px', letterSpacing: 0.25 }}>
+							{' '}
+							بالإضافة لجميع مزايا «ثمانية» حسب الدستور الرسمي وهي قابلة للتغيير.
+						</span>
+					</div>
+				</EditableWrapper>
+			) : (
+				<div className="font-8-sans" style={{ left: 309, top: 554, position: 'absolute', textAlign: 'right' }}>
+					<span style={{ color: '#FF0000', fontSize: 8, fontWeight: '300', lineHeight: '21px', letterSpacing: 0.25 }}>
+						*
+					</span>
+					<span style={{ color: 'black', fontSize: 8, fontWeight: '300', lineHeight: '21px', letterSpacing: 0.25 }}>
+						{' '}
+						بالإضافة لجميع مزايا «ثمانية» حسب الدستور الرسمي وهي قابلة للتغيير.
+					</span>
+				</div>
+			)}
 
 			{/* Closing message */}
-			<div className="font-8-display" style={{ left: 171, top: 615, position: 'absolute', textAlign: 'right' }}>
-				<span style={{ color: 'black', fontSize: 16, fontWeight: '400' }}>
-					يسعدنا أن تكون جزءًا مؤثرًا معنا في إنتاج{' '}
-				</span>
-				<span style={{ color: 'black', fontSize: 20, fontWeight: '700' }}>أفضل محتوى عربي.</span>
-			</div>
+			{editMode ? (
+				<EditableWrapper
+					initialLeft={171}
+					initialTop={615}
+					label="Closing Message"
+					width={376}
+					height={30}
+				>
+					<div className="font-8-display" style={{ textAlign: 'right' }}>
+						<span style={{ color: 'black', fontSize: 16, fontWeight: '400' }}>
+							يسعدنا أن تكون جزءًا مؤثرًا معنا في إنتاج{' '}
+						</span>
+						<span style={{ color: 'black', fontSize: 20, fontWeight: '700' }}>أفضل محتوى عربي.</span>
+					</div>
+				</EditableWrapper>
+			) : (
+				<div className="font-8-display" style={{ left: 171, top: 615, position: 'absolute', textAlign: 'right' }}>
+					<span style={{ color: 'black', fontSize: 16, fontWeight: '400' }}>
+						يسعدنا أن تكون جزءًا مؤثرًا معنا في إنتاج{' '}
+					</span>
+					<span style={{ color: 'black', fontSize: 20, fontWeight: '700' }}>أفضل محتوى عربي.</span>
+				</div>
+			)}
 
 			{/* Signature - Right (Employee) */}
-			<div
-				className="font-8-display"
-				style={{
-					width: 117,
-					left: 407,
-					top: 689,
-					position: 'absolute',
-					flexDirection: 'column',
-					justifyContent: 'center',
-					alignItems: 'center',
-					gap: 6,
-					display: 'inline-flex'
-				}}
-			>
+			{editMode ? (
+				<EditableWrapper
+					initialLeft={407}
+					initialTop={689}
+					label="Employee Signature"
+					width={117}
+					height={48}
+				>
+					<div
+						className="font-8-display"
+						style={{
+							width: 117,
+							flexDirection: 'column',
+							justifyContent: 'center',
+							alignItems: 'center',
+							gap: 6,
+							display: 'inline-flex'
+						}}
+					>
+						<div
+							style={{
+								alignSelf: 'stretch',
+								textAlign: 'center',
+								color: 'black',
+								fontSize: 18,
+								fontWeight: '700',
+								lineHeight: '21px',
+								letterSpacing: 0.56
+							}}
+						>
+							{formData.name}
+						</div>
+						<div
+							style={{
+								alignSelf: 'stretch',
+								color: 'black',
+								fontSize: 14,
+								fontWeight: '400',
+								lineHeight: '21px',
+								letterSpacing: 0.44
+							}}
+						>
+							{formData.jobTitle.split("|")[0].trim()}
+						</div>
+					</div>
+				</EditableWrapper>
+			) : (
 				<div
+					className="font-8-display"
 					style={{
-						alignSelf: 'stretch',
-						textAlign: 'center',
-						color: 'black',
-						fontSize: 18,
-						fontWeight: '700',
-						lineHeight: '21px',
-						letterSpacing: 0.56
+						width: 117,
+						left: 407,
+						top: 689,
+						position: 'absolute',
+						flexDirection: 'column',
+						justifyContent: 'center',
+						alignItems: 'center',
+						gap: 6,
+						display: 'inline-flex'
 					}}
 				>
-					{formData.name}
+					<div
+						style={{
+							alignSelf: 'stretch',
+							textAlign: 'center',
+							color: 'black',
+							fontSize: 18,
+							fontWeight: '700',
+							lineHeight: '21px',
+							letterSpacing: 0.56
+						}}
+					>
+						{formData.name}
+					</div>
+					<div
+						style={{
+							alignSelf: 'stretch',
+							color: 'black',
+							fontSize: 14,
+							fontWeight: '400',
+							lineHeight: '21px',
+							letterSpacing: 0.44
+						}}
+					>
+						{formData.jobTitle.split("|")[0].trim()}
+					</div>
 				</div>
-				<div
-					style={{
-						alignSelf: 'stretch',
-						color: 'black',
-						fontSize: 14,
-						fontWeight: '400',
-						lineHeight: '21px',
-						letterSpacing: 0.44
-					}}
-				>
-					{formData.jobTitle.split("|")[0].trim()}
-				</div>
-			</div>
+			)}
 
 			{/* Signature - Left (Manager) */}
-			<div
-				className="font-8-display"
-				style={{
-					width: 178,
-					left: 73,
-					top: 689,
-					position: 'absolute',
-					flexDirection: 'column',
-					justifyContent: 'center',
-					alignItems: 'center',
-					gap: 6,
-					display: 'inline-flex'
-				}}
-			>
+			{editMode ? (
+				<EditableWrapper
+					initialLeft={73}
+					initialTop={689}
+					label="Manager Signature"
+					width={178}
+					height={48}
+				>
+					<div
+						className="font-8-display"
+						style={{
+							width: 178,
+							flexDirection: 'column',
+							justifyContent: 'center',
+							alignItems: 'center',
+							gap: 6,
+							display: 'inline-flex'
+						}}
+					>
+						<div
+							style={{
+								alignSelf: 'stretch',
+								color: 'black',
+								fontSize: 18,
+								fontWeight: '700',
+								lineHeight: '21px',
+								letterSpacing: 0.56
+							}}
+						>
+							{selectedManager ? selectedManager.value : formData.directManager}
+						</div>
+						<div
+							style={{
+								alignSelf: 'stretch',
+								textAlign: 'center',
+								color: 'black',
+								fontSize: 14,
+								fontWeight: '400',
+								lineHeight: '21px',
+								letterSpacing: 0.44
+							}}
+						>
+							{selectedManager
+								? selectedManager.jobTitle.split("|")[0].trim()
+								: formData.directManagerJobTitle.split("|")[0].trim()}
+						</div>
+					</div>
+				</EditableWrapper>
+			) : (
 				<div
+					className="font-8-display"
 					style={{
-						alignSelf: 'stretch',
-						color: 'black',
-						fontSize: 18,
-						fontWeight: '700',
-						lineHeight: '21px',
-						letterSpacing: 0.56
+						width: 178,
+						left: 73,
+						top: 689,
+						position: 'absolute',
+						flexDirection: 'column',
+						justifyContent: 'center',
+						alignItems: 'center',
+						gap: 6,
+						display: 'inline-flex'
 					}}
 				>
-					{selectedManager ? selectedManager.value : formData.directManager}
+					<div
+						style={{
+							alignSelf: 'stretch',
+							color: 'black',
+							fontSize: 18,
+							fontWeight: '700',
+							lineHeight: '21px',
+							letterSpacing: 0.56
+						}}
+					>
+						{selectedManager ? selectedManager.value : formData.directManager}
+					</div>
+					<div
+						style={{
+							alignSelf: 'stretch',
+							textAlign: 'center',
+							color: 'black',
+							fontSize: 14,
+							fontWeight: '400',
+							lineHeight: '21px',
+							letterSpacing: 0.44
+						}}
+					>
+						{selectedManager
+							? selectedManager.jobTitle.split("|")[0].trim()
+							: formData.directManagerJobTitle.split("|")[0].trim()}
+					</div>
 				</div>
-				<div
-					style={{
-						alignSelf: 'stretch',
-						textAlign: 'center',
-						color: 'black',
-						fontSize: 14,
-						fontWeight: '400',
-						lineHeight: '21px',
-						letterSpacing: 0.44
-					}}
-				>
-					{selectedManager
-						? selectedManager.jobTitle.split("|")[0].trim()
-						: formData.directManagerJobTitle.split("|")[0].trim()}
-				</div>
-			</div>
+			)}
 
 			{/* "تفاصيل الراتب" text/logo at top - keeping as-is from Figma */}
 			<div
@@ -466,8 +680,6 @@ export default function SalaryPageV2({ formData, editMode = false, scale = 1 }: 
 				<div style={{ width: 3.53, height: 11.02, left: 123.67, top: 0.01, position: 'absolute', background: 'black' }} />
 				<div style={{ width: 2.34, height: 11.25, left: 128.66, top: 0.01, position: 'absolute', background: 'black' }} />
 			</div>
-
-			<PageFooter />
 		</div>
 	)
 }
