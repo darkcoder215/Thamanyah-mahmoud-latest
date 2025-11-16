@@ -1,16 +1,28 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { Button, Card, Modal, Empty, Popconfirm, message } from "antd"
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons"
-import TemplateBuilderForm, {
-	CustomTemplate,
-} from "@/components/TemplateBuilder/TemplateBuilderForm"
+import { Button, Card, Input, message, Modal, Upload } from "antd"
+import { PlusOutlined, EditOutlined, DeleteOutlined, InboxOutlined } from "@ant-design/icons"
 
-const CustomTemplatesPage: React.FC = () => {
+const { TextArea } = Input
+
+export interface CustomTemplate {
+	id: string
+	name: string
+	description: string
+	htmlCode: string // Simple HTML with {formData.xxx} placeholders
+	previewImage?: string // Optional screenshot for preview
+	createdAt: string
+}
+
+const CustomTemplates: React.FC = () => {
 	const [templates, setTemplates] = useState<CustomTemplate[]>([])
-	const [showBuilder, setShowBuilder] = useState(false)
-	const [previewTemplate, setPreviewTemplate] = useState<CustomTemplate | null>(null)
+	const [isModalOpen, setIsModalOpen] = useState(false)
+	const [editingTemplate, setEditingTemplate] = useState<CustomTemplate | null>(null)
+	const [formName, setFormName] = useState("")
+	const [formDescription, setFormDescription] = useState("")
+	const [formHtmlCode, setFormHtmlCode] = useState("")
+	const [previewImage, setPreviewImage] = useState("")
 
 	// Load templates from localStorage
 	useEffect(() => {
@@ -30,188 +42,264 @@ const CustomTemplatesPage: React.FC = () => {
 		setTemplates(newTemplates)
 	}
 
-	const handleSaveTemplate = (template: CustomTemplate) => {
-		const newTemplates = [...templates, template]
-		saveTemplates(newTemplates)
-		setShowBuilder(false)
-		message.success(`تم حفظ القالب "${template.name}" بنجاح!`)
+	const handleSave = () => {
+		if (!formName.trim()) {
+			message.error("الرجاء إدخال اسم القالب")
+			return
+		}
+		if (!formHtmlCode.trim()) {
+			message.error("الرجاء إدخال كود HTML")
+			return
+		}
+
+		if (editingTemplate) {
+			// Update existing
+			const updated = templates.map((t) =>
+				t.id === editingTemplate.id
+					? {
+							...t,
+							name: formName,
+							description: formDescription,
+							htmlCode: formHtmlCode,
+							previewImage,
+					  }
+					: t,
+			)
+			saveTemplates(updated)
+			message.success("تم تحديث القالب بنجاح")
+		} else {
+			// Create new
+			const newTemplate: CustomTemplate = {
+				id: `template-${Date.now()}`,
+				name: formName,
+				description: formDescription,
+				htmlCode: formHtmlCode,
+				previewImage,
+				createdAt: new Date().toISOString(),
+			}
+			saveTemplates([...templates, newTemplate])
+			message.success("تم إنشاء القالب بنجاح")
+		}
+
+		handleCloseModal()
 	}
 
-	const handleDeleteTemplate = (id: string) => {
-		const newTemplates = templates.filter((t) => t.id !== id)
-		saveTemplates(newTemplates)
-		message.success("تم حذف القالب")
+	const handleDelete = (id: string) => {
+		Modal.confirm({
+			title: "هل أنت متأكد من حذف هذا القالب؟",
+			content: "لا يمكن التراجع عن هذا الإجراء",
+			okText: "حذف",
+			cancelText: "إلغاء",
+			onOk: () => {
+				const filtered = templates.filter((t) => t.id !== id)
+				saveTemplates(filtered)
+				message.success("تم حذف القالب بنجاح")
+			},
+		})
 	}
 
-	const handlePreview = (template: CustomTemplate) => {
-		setPreviewTemplate(template)
+	const handleEdit = (template: CustomTemplate) => {
+		setEditingTemplate(template)
+		setFormName(template.name)
+		setFormDescription(template.description)
+		setFormHtmlCode(template.htmlCode)
+		setPreviewImage(template.previewImage || "")
+		setIsModalOpen(true)
+	}
+
+	const handleCloseModal = () => {
+		setIsModalOpen(false)
+		setEditingTemplate(null)
+		setFormName("")
+		setFormDescription("")
+		setFormHtmlCode("")
+		setPreviewImage("")
+	}
+
+	const handleImageUpload = (file: File) => {
+		const reader = new FileReader()
+		reader.onload = () => {
+			setPreviewImage(reader.result as string)
+		}
+		reader.readAsDataURL(file)
+		return false // Prevent auto upload
 	}
 
 	return (
-		<div className="min-h-screen p-6">
-			<div className="mx-auto max-w-7xl">
-				<div className="mb-8 flex items-center justify-between">
-					<div>
-						<h1 className="text-3xl font-bold">القوالب المخصصة</h1>
-						<p className="mt-2 text-gray-600">
-							أنشئ قوالب مخصصة من تصاميم Figma واستخدمها في عروض العمل
-						</p>
-					</div>
-					<Button
-						type="primary"
-						size="large"
-						icon={<PlusOutlined />}
-						onClick={() => setShowBuilder(true)}
-					>
-						إنشاء قالب جديد
-					</Button>
-				</div>
+		<div className="mx-auto max-w-6xl p-6">
+			<div className="mb-6 flex items-center justify-between">
+				<h1 className="text-2xl font-bold">القوالب المخصصة</h1>
+				<Button
+					type="primary"
+					icon={<PlusOutlined />}
+					onClick={() => setIsModalOpen(true)}
+					size="large"
+				>
+					إنشاء قالب جديد
+				</Button>
+			</div>
 
-				{templates.length === 0 ? (
-					<Card>
-						<Empty
-							description={
-								<div>
-									<p className="mb-2 text-lg">لا توجد قوالب مخصصة بعد</p>
-									<p className="text-gray-600">
-										ابدأ بإنشاء قالبك الأول من تصميم Figma
-									</p>
-								</div>
+			<div className="mb-4 rounded bg-blue-50 p-4 text-sm text-blue-800">
+				<strong>💡 كيف تعمل القوالب المخصصة؟</strong>
+				<ul className="mt-2 list-inside list-disc space-y-1">
+					<li>
+						اكتب كود HTML بسيط (ليس JSX أو React!)
+					</li>
+					<li>
+						استخدم المتغيرات مثل: <code className="rounded bg-blue-100 px-1">{"{formData.name}"}</code>,{" "}
+						<code className="rounded bg-blue-100 px-1">{"{formData.jobTitle}"}</code>,{" "}
+						<code className="rounded bg-blue-100 px-1">{"{formData.monthlySalary}"}</code>
+					</li>
+					<li>سيتم استبدال هذه المتغيرات تلقائيًا بالبيانات الفعلية عند إنشاء العرض</li>
+					<li>يمكنك استخدام inline CSS مباشرة: <code className="rounded bg-blue-100 px-1">{`style="color: red; font-size: 20px"`}</code></li>
+				</ul>
+			</div>
+
+			{templates.length === 0 ? (
+				<Card>
+					<div className="py-12 text-center text-gray-500">
+						<p className="mb-4">لا توجد قوالب مخصصة بعد</p>
+						<Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
+							إنشاء أول قالب
+						</Button>
+					</div>
+				</Card>
+			) : (
+				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+					{templates.map((template) => (
+						<Card
+							key={template.id}
+							hoverable
+							cover={
+								template.previewImage ? (
+									<img
+										alt={template.name}
+										src={template.previewImage}
+										className="h-48 object-cover"
+									/>
+								) : (
+									<div className="flex h-48 items-center justify-center bg-gray-100 text-gray-400">
+										لا توجد صورة معاينة
+									</div>
+								)
 							}
+							actions={[
+								<Button
+									key="edit"
+									type="text"
+									icon={<EditOutlined />}
+									onClick={() => handleEdit(template)}
+								>
+									تعديل
+								</Button>,
+								<Button
+									key="delete"
+									type="text"
+									danger
+									icon={<DeleteOutlined />}
+									onClick={() => handleDelete(template.id)}
+								>
+									حذف
+								</Button>,
+							]}
 						>
-							<Button
-								type="primary"
-								icon={<PlusOutlined />}
-								onClick={() => setShowBuilder(true)}
-							>
-								إنشاء قالب جديد
-							</Button>
-						</Empty>
-					</Card>
-				) : (
-					<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-						{templates.map((template) => (
-							<Card
-								key={template.id}
+							<Card.Meta
 								title={template.name}
-								extra={
-									<div className="flex gap-2">
-										<Button
-											type="text"
-											size="small"
-											icon={<EyeOutlined />}
-											onClick={() => handlePreview(template)}
-										/>
-										<Popconfirm
-											title="هل أنت متأكد من حذف هذا القالب؟"
-											onConfirm={() => handleDeleteTemplate(template.id)}
-											okText="نعم"
-											cancelText="لا"
-										>
-											<Button
-												type="text"
-												size="small"
-												danger
-												icon={<DeleteOutlined />}
-											/>
-										</Popconfirm>
+								description={
+									<div>
+										<p className="mb-2 text-xs text-gray-600">{template.description}</p>
+										<p className="text-xs text-gray-400">
+											تم الإنشاء: {new Date(template.createdAt).toLocaleDateString("ar-SA")}
+										</p>
 									</div>
 								}
-								className="hover:shadow-lg"
-							>
-								<p className="mb-4 text-sm text-gray-600">{template.description}</p>
-								<div className="space-y-2 text-xs text-gray-500">
-									<div>
-										<strong>الصور:</strong> {Object.keys(template.assets || {}).length}{" "}
-										صورة
-									</div>
-									<div>
-										<strong>تاريخ الإنشاء:</strong>{" "}
-										{new Date(template.createdAt).toLocaleDateString("ar")}
-									</div>
-								</div>
-							</Card>
-						))}
+							/>
+						</Card>
+					))}
+				</div>
+			)}
+
+			<Modal
+				title={editingTemplate ? "تعديل القالب" : "إنشاء قالب جديد"}
+				open={isModalOpen}
+				onCancel={handleCloseModal}
+				width={900}
+				footer={[
+					<Button key="cancel" onClick={handleCloseModal}>
+						إلغاء
+					</Button>,
+					<Button key="save" type="primary" onClick={handleSave}>
+						{editingTemplate ? "حفظ التغييرات" : "إنشاء القالب"}
+					</Button>,
+				]}
+			>
+				<div className="space-y-4">
+					<div>
+						<label className="mb-1 block text-sm font-medium">اسم القالب *</label>
+						<Input
+							value={formName}
+							onChange={(e) => setFormName(e.target.value)}
+							placeholder="مثال: قالب العرض الوظيفي - الأزرق"
+							size="large"
+						/>
 					</div>
-				)}
 
-				{/* Template Builder Modal */}
-				<Modal
-					open={showBuilder}
-					onCancel={() => setShowBuilder(false)}
-					footer={null}
-					width="95%"
-					style={{ top: 20 }}
-					destroyOnClose
-				>
-					<TemplateBuilderForm
-						onSave={handleSaveTemplate}
-						onCancel={() => setShowBuilder(false)}
-					/>
-				</Modal>
+					<div>
+						<label className="mb-1 block text-sm font-medium">وصف القالب</label>
+						<Input
+							value={formDescription}
+							onChange={(e) => setFormDescription(e.target.value)}
+							placeholder="وصف مختصر للقالب"
+							size="large"
+						/>
+					</div>
 
-				{/* Preview Modal */}
-				<Modal
-					open={!!previewTemplate}
-					onCancel={() => setPreviewTemplate(null)}
-					footer={null}
-					width="90%"
-					title={`معاينة: ${previewTemplate?.name}`}
-				>
-					{previewTemplate && (
-						<div className="space-y-4">
-							<div className="rounded-lg bg-gray-50 p-4">
-								<h3 className="mb-2 font-semibold">معلومات القالب</h3>
-								<p className="mb-2 text-sm">{previewTemplate.description}</p>
-								<div className="space-y-1 text-xs text-gray-600">
-									<p>
-										الصور: {Object.keys(previewTemplate.assets || {}).length} صورة
-									</p>
-									<p>عدد الأحرف: {previewTemplate.code.length}</p>
-									<p>
-										تاريخ الإنشاء:{" "}
-										{new Date(previewTemplate.createdAt).toLocaleDateString("ar")}
-									</p>
-								</div>
-							</div>
+					<div>
+						<label className="mb-1 block text-sm font-medium">صورة المعاينة (اختياري)</label>
+						<Upload
+							accept="image/*"
+							showUploadList={false}
+							beforeUpload={handleImageUpload}
+							maxCount={1}
+						>
+							<Button icon={<InboxOutlined />}>رفع صورة معاينة</Button>
+						</Upload>
+						{previewImage && (
+							<img
+								src={previewImage}
+								alt="Preview"
+								className="mt-2 h-32 rounded border object-cover"
+							/>
+						)}
+					</div>
 
-							{Object.keys(previewTemplate.assets || {}).length > 0 && (
-								<div className="rounded-lg border bg-white p-4">
-									<h4 className="mb-2 font-semibold text-sm">الصور المرفوعة</h4>
-									<div className="grid grid-cols-3 gap-2">
-										{Object.entries(previewTemplate.assets).map(
-											([placeholder, url]) => (
-												<div
-													key={placeholder}
-													className="rounded border p-2 text-center"
-												>
-													<img
-														src={url}
-														alt={placeholder}
-														className="mx-auto mb-1 h-16 object-contain"
-													/>
-													<code className="block truncate text-xs text-gray-500">
-														{placeholder}
-													</code>
-												</div>
-											),
-										)}
-									</div>
-								</div>
-							)}
-
-							<div className="max-h-96 overflow-auto rounded-lg border bg-gray-100 p-4">
-								<h4 className="mb-2 font-semibold text-sm">الكود</h4>
-								<pre className="text-xs" style={{ direction: "ltr" }}>
-									<code>{previewTemplate.code}</code>
-								</pre>
-							</div>
+					<div>
+						<label className="mb-1 block text-sm font-medium">كود HTML *</label>
+						<div className="mb-2 rounded bg-yellow-50 p-2 text-xs text-yellow-800">
+							<strong>مثال:</strong>
+							<pre className="mt-1 overflow-auto">
+								{`<div style="padding: 20px; background: #f5f5f5;">
+  <h1 style="color: #333;">{formData.name}</h1>
+  <p>المسمى الوظيفي: {formData.jobTitle}</p>
+  <p>الراتب: {formData.monthlySalary} ريال</p>
+</div>`}
+							</pre>
 						</div>
-					)}
-				</Modal>
-			</div>
+						<TextArea
+							value={formHtmlCode}
+							onChange={(e) => setFormHtmlCode(e.target.value)}
+							placeholder="الصق كود HTML هنا..."
+							rows={15}
+							style={{ fontFamily: "monospace", fontSize: "13px" }}
+						/>
+						<p className="mt-1 text-xs text-gray-500">
+							عدد الأحرف: {formHtmlCode.length}
+						</p>
+					</div>
+				</div>
+			</Modal>
 		</div>
 	)
 }
 
-export default CustomTemplatesPage
+export default CustomTemplates

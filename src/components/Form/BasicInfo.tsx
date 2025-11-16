@@ -4,7 +4,7 @@ import { InboxOutlined } from "@ant-design/icons"
 import { Form, Input, Radio, Select, Upload, message, Alert } from "antd"
 import { type JobOfferFormProps } from "./JobOfferFormTypes"
 import ManagerSign from "./ManagerSign"
-import { CustomTemplate } from "@/components/TemplateBuilder/TemplateBuilderForm"
+import { CustomTemplate } from "@/components/JobOffer/CustomTemplateRenderer"
 
 const { Option } = Select
 

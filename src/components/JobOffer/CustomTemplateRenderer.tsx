@@ -3,140 +3,20 @@
 import React, { useMemo } from "react"
 import PageFooter from "@/components/Form/Preview/PageFooter"
 import { JobOfferFormData } from "@/components/Form/JobOfferFormTypes"
-import { CustomTemplate } from "@/components/TemplateBuilder/TemplateBuilderForm"
 import { formatNumbers } from "@/utils/helpers"
+
+export interface CustomTemplate {
+	id: string
+	name: string
+	description: string
+	htmlCode: string
+	previewImage?: string
+	createdAt: string
+}
 
 interface CustomTemplateRendererProps {
 	template: CustomTemplate
 	formData: JobOfferFormData
-}
-
-const convertJSXStylesToHTML = (html: string): string => {
-	let result = html
-
-	// STEP 1: Convert style={{...}} (proper JSX inline styles)
-	let searchStart = 0
-	while (true) {
-		const styleStart = result.indexOf('style={{', searchStart)
-		if (styleStart === -1) break
-
-		// Find the matching }} by counting braces
-		let braceCount = 0
-		let i = styleStart + 7 // Start after 'style={{'
-		let foundEnd = false
-
-		for (; i < result.length - 1; i++) {
-			if (result[i] === '{') braceCount++
-			if (result[i] === '}') {
-				if (braceCount === 0 && result[i + 1] === '}') {
-					foundEnd = true
-					break
-				}
-				braceCount--
-			}
-		}
-
-		if (!foundEnd) {
-			searchStart = styleStart + 1
-			continue
-		}
-
-		// Extract the style object content
-		const styleContent = result.substring(styleStart + 8, i)
-
-		// Convert to CSS string
-		const cssString = convertStyleObjectToCSS(styleContent)
-
-		// Replace in result
-		const before = result.substring(0, styleStart)
-		const after = result.substring(i + 2)
-		result = before + `style="${cssString}"` + after
-
-		searchStart = styleStart + cssString.length + 10
-	}
-
-	// STEP 2: Convert style="..." with JS object syntax (Figma malformed export)
-	// Matches: style="color: 'black', fontSize: 10, ..."
-	result = result.replace(/style="([^"]*?,.*?)"/g, (match, content) => {
-		// Check if it has JS object syntax (contains commas and colons)
-		if (content.includes(',') && content.includes(':')) {
-			const cssString = convertStyleObjectToCSS(content)
-			return `style="${cssString}"`
-		}
-		return match // Keep as-is if it's already valid CSS
-	})
-
-	return result
-}
-
-const convertStyleObjectToCSS = (styleContent: string): string => {
-	try {
-		// Split by commas but respect quotes and nested objects
-		const properties = []
-		let current = ''
-		let inQuotes = false
-		let quoteChar = ''
-		let braceDepth = 0
-
-		for (let i = 0; i < styleContent.length; i++) {
-			const char = styleContent[i]
-
-			if ((char === "'" || char === '"') && styleContent[i - 1] !== '\\') {
-				if (!inQuotes) {
-					inQuotes = true
-					quoteChar = char
-				} else if (char === quoteChar) {
-					inQuotes = false
-				}
-			}
-
-			if (!inQuotes) {
-				if (char === '{') braceDepth++
-				if (char === '}') braceDepth--
-			}
-
-			if (char === ',' && !inQuotes && braceDepth === 0) {
-				if (current.trim()) properties.push(current.trim())
-				current = ''
-			} else {
-				current += char
-			}
-		}
-		if (current.trim()) properties.push(current.trim())
-
-		// Properties that need 'px' suffix when numeric
-		const needsPxSuffix = ['width', 'height', 'top', 'left', 'right', 'bottom',
-			'fontSize', 'letterSpacing', 'lineHeight', 'margin', 'padding',
-			'borderRadius', 'gap']
-
-		// Convert each property from JS to CSS
-		const cssProperties = properties.map(prop => {
-			const colonIndex = prop.indexOf(':')
-			if (colonIndex === -1) return ''
-
-			const key = prop.substring(0, colonIndex).trim()
-			let value = prop.substring(colonIndex + 1).trim()
-
-			// Remove quotes around values
-			value = value.replace(/^['"]/, '').replace(/['"]$/, '')
-
-			// Convert camelCase to kebab-case
-			const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase()
-
-			// Add 'px' suffix to numeric values (including decimals) that need it
-			// Match integers or decimals: 10, 10.5, -10, -10.5
-			if (needsPxSuffix.includes(key) && /^-?\d+(\.\d+)?$/.test(value)) {
-				value = value + 'px'
-			}
-
-			return `${cssKey}: ${value}`
-		}).filter(Boolean).join('; ')
-
-		return cssProperties
-	} catch (error) {
-		console.error('Error converting style object:', error)
-		return ''
-	}
 }
 
 const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
@@ -147,19 +27,10 @@ const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 		console.log("🎨 Rendering custom template:", template.name)
 		console.log("📊 Form data:", formData)
 
-		let html = template.code
+		let html = template.htmlCode
 
 		try {
-			// Step 1: Replace asset placeholders with uploaded images
-			console.log("🖼️ Replacing assets...")
-			Object.entries(template.assets).forEach(([placeholder, uploadedUrl]) => {
-				html = html.replace(
-					new RegExp(`src=["']${placeholder}["']`, "g"),
-					`src="${uploadedUrl}"`,
-				)
-			})
-
-			// Step 2: Replace {formData.field} placeholders with actual values
+			// Replace {formData.field} placeholders with actual values
 			console.log("📝 Replacing form data placeholders...")
 			html = html.replace(/\{formData\.(\w+)\}/g, (match, fieldName) => {
 				const value = formData[fieldName as keyof JobOfferFormData]
@@ -178,40 +49,13 @@ const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 				return String(value || "")
 			})
 
-			// Step 3: Convert JSX to HTML
-			console.log("🔄 Converting JSX to HTML...")
-
-			// Remove import statements
-			html = html.replace(/import\s+.+from\s+['"].+['"];?\s*/g, "")
-
-			// Remove export statements
-			html = html.replace(/export\s+(default\s+)?/g, "")
-
-			// Convert className to class
-			html = html.replace(/className=/g, "class=")
-
-			// Convert JSX inline styles style={{...}} to HTML style="..."
-			html = convertJSXStylesToHTML(html)
-
-			// Remove self-closing tags that aren't valid HTML (except img, br, hr, input)
-			html = html.replace(/<(div|span|p|h1|h2|h3|h4|h5|h6|a|button|section|article|header|footer|nav|main|aside)([^>]*?)\s*\/>/g, "<$1$2></$1>")
-
-			// Extract just the JSX return value if it's in a component
-			const returnMatch = html.match(/return\s*\(([\s\S]*)\);?\s*\}?\s*$/m)
-			if (returnMatch) {
-				html = returnMatch[1]
-			}
-
-			// Remove any remaining function wrapper
-			html = html.replace(/^.*?=>\s*{?\s*/m, "")
-			html = html.replace(/^.*?function.*?\{?\s*/m, "")
-
 			console.log("✅ Template rendering complete!")
+			console.log("📄 Final HTML length:", html.length)
 
 			return html.trim()
 		} catch (error) {
 			console.error("❌ Error rendering template:", error)
-			return `<div class="text-red-500">خطأ في عرض القالب: ${error instanceof Error ? error.message : "خطأ غير معروف"}</div>`
+			return `<div class="p-8 text-red-500">خطأ في عرض القالب: ${error instanceof Error ? error.message : "خطأ غير معروف"}</div>`
 		}
 	}, [template, formData])
 

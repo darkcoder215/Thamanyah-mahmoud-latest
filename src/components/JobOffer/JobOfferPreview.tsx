@@ -7,8 +7,7 @@ import PreviewActions from "../Shared/PreviewActions"
 import TempBasicInfoPage from "../TempOffer/Preview/BasicInfoPage"
 import BasicInfoPage from "./Preview/BasicInfoPage"
 import SalaryPage from "./Preview/SalaryPage"
-import CustomTemplateRenderer from "./CustomTemplateRenderer"
-import { CustomTemplate } from "@/components/TemplateBuilder/TemplateBuilderForm"
+import CustomTemplateRenderer, { CustomTemplate } from "./CustomTemplateRenderer"
 import { Alert } from "antd"
 
 interface JobOfferPreviewProps {
