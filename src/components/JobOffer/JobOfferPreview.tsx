@@ -8,6 +8,9 @@ import TempBasicInfoPage from "../TempOffer/Preview/BasicInfoPage"
 import BasicInfoPage from "./Preview/BasicInfoPage"
 import SalaryPage from "./Preview/SalaryPage"
 import CustomTemplateRenderer, { CustomTemplate } from "./CustomTemplateRenderer"
+import CoverPageV2 from "./Preview/CoverPageV2"
+import BasicInfoPageV2 from "./Preview/BasicInfoPageV2"
+import SalaryPageV2 from "./Preview/SalaryPageV2"
 import { Alert } from "antd"
 
 interface JobOfferPreviewProps {
@@ -88,6 +91,25 @@ const JobOfferPreview: React.FC<JobOfferPreviewProps> = ({ formData, levels, onE
 						title={formData.contractType === "employment" ? "عرض وظيفي" : "عرض تعاوني"}
 					/>
 					<CustomTemplateRenderer template={customTemplate} formData={formData} />
+					<Outro />
+				</div>
+				<PreviewActions
+					onEdit={onEdit}
+					onFileUpload={handleFileUpload}
+					email={formData.email}
+				/>
+			</>
+		)
+	}
+
+	// Render latest theme (V2 design)
+	if (formData.theme === "latest") {
+		return (
+			<>
+				<div className="overflow-x-auto">
+					<CoverPageV2 name={formData.name} />
+					<BasicInfoPageV2 formData={formData} levels={levels} />
+					<SalaryPageV2 formData={formData} />
 					<Outro />
 				</div>
 				<PreviewActions

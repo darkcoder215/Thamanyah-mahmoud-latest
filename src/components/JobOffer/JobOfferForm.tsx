@@ -13,7 +13,11 @@ import JobOfferPreview from "./JobOfferPreview"
 
 const { Step } = Steps
 
-const JobOfferForm: React.FC = () => {
+interface JobOfferFormProps {
+	defaultTheme?: "general" | "league" | "latest"
+}
+
+const JobOfferForm: React.FC<JobOfferFormProps> = ({ defaultTheme = "general" }) => {
 	const router = useRouter()
 	const [formData, setFormData] = useState<JobOfferFormData>({
 		offerType: "general",
@@ -37,7 +41,7 @@ const JobOfferForm: React.FC = () => {
 		additionalAllowances: 0,
 		netSalary: 0,
 		managerSignName: "",
-		theme: "general",
+		theme: defaultTheme,
 		salaryType: "withAllowances",
 		workTypeParent: "employee",
 		saudiLocation: "inSaudi",

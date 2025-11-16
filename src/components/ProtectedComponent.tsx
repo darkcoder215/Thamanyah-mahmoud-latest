@@ -26,6 +26,13 @@ const ProtectedComponent = () => {
 			color: "#1890ff",
 		},
 		{
+			title: "عرض وظيفة - تصميم جديد",
+			description: "إنشاء عرض وظيفة بالتصميم الجديد",
+			icon: <FileTextOutlined style={{ fontSize: "32px" }} />,
+			href: "/new-job-offer",
+			color: "#03BB6E",
+		},
+		{
 			title: "عرض مستقل",
 			description: "إنشاء عقد عمل حر للمستقلين",
 			icon: <UserOutlined style={{ fontSize: "32px" }} />,
