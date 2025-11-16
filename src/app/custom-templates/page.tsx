@@ -275,6 +275,9 @@ const CustomTemplates: React.FC = () => {
 	const generatePreviewHTML = (): string => {
 		let html = formHtmlCode
 
+		console.log("🎨 Generating preview HTML...")
+		console.log("📝 Original HTML:", html.substring(0, 500))
+
 		// Replace mapped text with sample values
 		const sampleData: Record<string, any> = {
 			name: "أحمد محمد",
@@ -298,8 +301,13 @@ const CustomTemplates: React.FC = () => {
 		Object.entries(fieldMappings).forEach(([text, fieldName]) => {
 			const value = sampleData[fieldName] || `[${fieldName}]`
 			const escapedText = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-			html = html.replace(new RegExp(escapedText, 'g'), String(value))
+			const regex = new RegExp(escapedText, 'g')
+			html = html.replace(regex, String(value))
+			console.log(`📝 Replacing "${text}" with "${value}"`)
 		})
+
+		console.log("✅ Final HTML:", html.substring(0, 500))
+		console.log("📊 HTML length:", html.length)
 
 		return html
 	}
@@ -586,13 +594,42 @@ const CustomTemplates: React.FC = () => {
 						<div className="rounded bg-blue-50 p-3 text-sm text-blue-800">
 							<strong>👁️ معاينة القالب</strong>
 							<p className="mt-1">هذه معاينة بيانات تجريبية. سيتم استبدالها بالبيانات الفعلية عند الاستخدام.</p>
+							<p className="mt-1 text-xs">
+								💡 نصيحة: افتح وحدة التحكم في المتصفح (F12) لرؤية سجلات التصحيح التفصيلية
+							</p>
 						</div>
 
-						<div
-							className="max-h-96 overflow-auto rounded border bg-white p-6"
-							style={{ direction: "rtl" }}
-							dangerouslySetInnerHTML={{ __html: generatePreviewHTML() }}
-						/>
+						<div className="rounded bg-yellow-50 p-3 text-xs text-yellow-800">
+							<strong>⚠️ إذا كانت المعاينة فارغة:</strong>
+							<ul className="mt-1 list-inside list-disc">
+								<li>تأكد من أن كود HTML يحتوي على محتوى مرئي</li>
+								<li>تحقق من أن الأنماط (styles) تحتوي على أبعاد (width, height)</li>
+								<li>تأكد من أن النصوص المربوطة موجودة في الكود</li>
+								<li>افحص HTML الخام أدناه</li>
+							</ul>
+						</div>
+
+						<div>
+							<div className="mb-2 text-sm font-medium">معاينة مرئية:</div>
+							<div
+								className="overflow-auto rounded border-2 border-blue-500 bg-white p-6"
+								style={{
+									direction: "rtl",
+									minHeight: "400px",
+									maxHeight: "600px"
+								}}
+								dangerouslySetInnerHTML={{ __html: generatePreviewHTML() }}
+							/>
+						</div>
+
+						<details className="rounded border bg-gray-50 p-3">
+							<summary className="cursor-pointer text-sm font-medium text-gray-700">
+								🔍 عرض HTML الخام (للتطوير)
+							</summary>
+							<pre className="mt-2 max-h-64 overflow-auto rounded bg-gray-100 p-3 text-xs">
+								{generatePreviewHTML()}
+							</pre>
+						</details>
 
 						<div className="rounded bg-gray-50 p-3">
 							<div className="text-xs font-medium text-gray-600">ملخص القالب:</div>
@@ -600,6 +637,7 @@ const CustomTemplates: React.FC = () => {
 								<li>{Object.keys(fieldMappings).length} نص مربوط بحقول البيانات</li>
 								<li>{customFields.length} حقل مخصص جديد</li>
 								<li>{detectedTexts.length - Object.keys(fieldMappings).length} نص غير مربوط (سيبقى كما هو)</li>
+								<li>طول HTML النهائي: {generatePreviewHTML().length} حرف</li>
 							</ul>
 						</div>
 

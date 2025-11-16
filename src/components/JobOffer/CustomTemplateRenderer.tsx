@@ -39,8 +39,16 @@ const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 		let html = template.htmlCode
 
 		try {
+			if (!html || html.trim().length === 0) {
+				console.error("❌ Template HTML is empty!")
+				return `<div class="p-8 text-red-500">خطأ: القالب فارغ</div>`
+			}
+
+			console.log("📝 Original HTML length:", html.length)
+			console.log("📝 First 200 chars:", html.substring(0, 200))
+
 			// Replace each mapped text with its corresponding field value
-			Object.entries(template.fieldMappings).forEach(([originalText, fieldName]) => {
+			Object.entries(template.fieldMappings || {}).forEach(([originalText, fieldName]) => {
 				const value = formData[fieldName as keyof JobOfferFormData]
 
 				let replacementValue = ""
@@ -59,15 +67,26 @@ const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 
 				// Replace all occurrences of the original text
 				const regex = new RegExp(escapedText, 'g')
+				const beforeLength = html.length
 				html = html.replace(regex, replacementValue)
+				const afterLength = html.length
 
-				console.log(`📝 Replaced "${originalText}" with "${replacementValue}"`)
+				console.log(`📝 Replacing "${originalText}" with "${replacementValue}"`)
+				console.log(`   HTML length changed: ${beforeLength} → ${afterLength}`)
 			})
 
 			console.log("✅ Template rendering complete!")
 			console.log("📄 Final HTML length:", html.length)
+			console.log("📄 Final first 200 chars:", html.substring(0, 200))
 
-			return html.trim()
+			const result = html.trim()
+
+			if (result.length === 0) {
+				console.error("❌ Final rendered HTML is empty!")
+				return `<div class="p-8 text-red-500">خطأ: HTML النهائي فارغ. تحقق من وحدة التحكم للتفاصيل.</div>`
+			}
+
+			return result
 		} catch (error) {
 			console.error("❌ Error rendering template:", error)
 			return `<div class="p-8 text-red-500">خطأ في عرض القالب: ${error instanceof Error ? error.message : "خطأ غير معروف"}</div>`
