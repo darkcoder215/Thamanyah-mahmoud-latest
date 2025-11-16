@@ -63,6 +63,7 @@ export default function CoverPageV2({ name, editMode = false, scale = 1 }: Cover
 					label="Name"
 					width={150}
 					height={35}
+					fontInfo="font-8-display • 29px • 400"
 				>
 					<div
 						className="font-8-display text-white"

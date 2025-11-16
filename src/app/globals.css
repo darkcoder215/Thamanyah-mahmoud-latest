@@ -90,6 +90,19 @@ label.eight-form-item-required::before {
 		display: none !important;
 	}
 
+	/* Hide all edit mode UI elements when printing */
+	.editable-wrapper-container {
+		border: none !important;
+		padding: 0 !important;
+		background: none !important;
+		box-shadow: none !important;
+		cursor: default !important;
+	}
+
+	.editable-wrapper-infobar {
+		display: none !important;
+	}
+
 	.page-v2 {
 		width: 210mm;
 		height: 297mm;

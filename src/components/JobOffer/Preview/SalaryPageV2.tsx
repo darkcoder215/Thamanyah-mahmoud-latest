@@ -25,6 +25,7 @@ export default function SalaryPageV2({ formData, editMode = false, scale = 1 }: 
 					label="Benefits Heading"
 					width={261}
 					height={35}
+					fontInfo="font-8-display • 24px • 900"
 				>
 					<div
 						className="font-8-display"
@@ -120,45 +121,93 @@ export default function SalaryPageV2({ formData, editMode = false, scale = 1 }: 
 			)}
 
 			{/* Salary amount with icon */}
-			<div
-				style={{
-					left: 73,
-					top: 147,
-					position: 'absolute',
-					justifyContent: 'center',
-					alignItems: 'center',
-					gap: 10,
-					display: 'inline-flex'
-				}}
-			>
-				{/* Thmanyah SAR icon - using proper SVG from original */}
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 1124.14 1256.39"
-					className="inline-block"
-					style={{ width: 15, height: 17 }}
+			{editMode ? (
+				<EditableWrapper
+					initialLeft={73}
+					initialTop={147}
+					label="Monthly Salary Amount"
+					width={120}
+					height={24}
+					fontInfo="font-8-display • 16px • 700"
 				>
-					<path
-						fill="currentColor"
-						d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"
-					/>
-					<path
-						fill="currentColor"
-						d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"
-					/>
-				</svg>
+					<div
+						style={{
+							justifyContent: 'center',
+							alignItems: 'center',
+							gap: 10,
+							display: 'inline-flex'
+						}}
+					>
+						{/* Thmanyah SAR icon - using proper SVG from original */}
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 1124.14 1256.39"
+							className="inline-block"
+							style={{ width: 15, height: 17 }}
+						>
+							<path
+								fill="currentColor"
+								d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"
+							/>
+							<path
+								fill="currentColor"
+								d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"
+							/>
+						</svg>
+						<div
+							className="font-8-display"
+							style={{
+								textAlign: 'right',
+								color: 'black',
+								fontSize: 16,
+								fontWeight: '700'
+							}}
+						>
+							({formatNumbers(formData.monthlySalary)})
+						</div>
+					</div>
+				</EditableWrapper>
+			) : (
 				<div
-					className="font-8-display"
 					style={{
-						textAlign: 'right',
-						color: 'black',
-						fontSize: 16,
-						fontWeight: '700'
+						left: 73,
+						top: 147,
+						position: 'absolute',
+						justifyContent: 'center',
+						alignItems: 'center',
+						gap: 10,
+						display: 'inline-flex'
 					}}
 				>
-					({formatNumbers(formData.monthlySalary)})
+					{/* Thmanyah SAR icon - using proper SVG from original */}
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 1124.14 1256.39"
+						className="inline-block"
+						style={{ width: 15, height: 17 }}
+					>
+						<path
+							fill="currentColor"
+							d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"
+						/>
+						<path
+							fill="currentColor"
+							d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"
+						/>
+					</svg>
+					<div
+						className="font-8-display"
+						style={{
+							textAlign: 'right',
+							color: 'black',
+							fontSize: 16,
+							fontWeight: '700'
+						}}
+					>
+						({formatNumbers(formData.monthlySalary)})
+					</div>
 				</div>
-			</div>
+			)}
 
 			{/* Green bar at top */}
 			{editMode ? (
@@ -393,6 +442,7 @@ export default function SalaryPageV2({ formData, editMode = false, scale = 1 }: 
 					label="Disclaimer"
 					width={238}
 					height={21}
+					fontInfo="font-8-sans • 8px • 300"
 				>
 					<div className="font-8-sans" style={{ textAlign: 'right' }}>
 						<span style={{ color: '#FF0000', fontSize: 8, fontWeight: '300', lineHeight: '21px', letterSpacing: 0.25 }}>
@@ -424,6 +474,7 @@ export default function SalaryPageV2({ formData, editMode = false, scale = 1 }: 
 					label="Closing Message"
 					width={376}
 					height={30}
+					fontInfo="font-8-display • 16-20px • 400-700"
 				>
 					<div className="font-8-display" style={{ textAlign: 'right' }}>
 						<span style={{ color: 'black', fontSize: 16, fontWeight: '400' }}>
@@ -449,6 +500,7 @@ export default function SalaryPageV2({ formData, editMode = false, scale = 1 }: 
 					label="Employee Signature"
 					width={117}
 					height={48}
+					fontInfo="font-8-display • 18px/14px • 700/400"
 				>
 					<div
 						className="font-8-display"
@@ -539,6 +591,7 @@ export default function SalaryPageV2({ formData, editMode = false, scale = 1 }: 
 					label="Manager Signature"
 					width={178}
 					height={48}
+					fontInfo="font-8-display • 18px/14px • 700/400"
 				>
 					<div
 						className="font-8-display"

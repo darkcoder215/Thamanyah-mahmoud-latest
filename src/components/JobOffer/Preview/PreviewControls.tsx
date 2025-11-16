@@ -45,22 +45,33 @@ export default function PreviewControls({ onEditModeToggle }: PreviewControlsPro
 			/>
 
 			{editMode && (
-				<Alert
-					message="Instructions"
-					description={
-						<ul style={{ margin: 0, paddingLeft: 20 }}>
-							<li>Click and drag any orange-bordered element to move it</li>
-							<li>See live coordinates (L: left, T: top) and dimensions in the orange bar</li>
-							<li>Click "📁 Upload" on the logo to change the image</li>
-							<li>New positions are logged to browser console for you to copy</li>
-							<li>Check the console (F12) to get the final coordinates</li>
-						</ul>
-					}
-					type="warning"
-					showIcon
-					style={{ marginTop: 12 }}
-					closable
-				/>
+				<>
+					<Alert
+						message="⚠️ IMPORTANT: Disable Edit Mode Before Printing/Downloading!"
+						description="Make sure to click 'Exit Edit Mode' before you print or download the PDF to avoid any editing artifacts."
+						type="error"
+						showIcon
+						style={{ marginTop: 12, marginBottom: 12 }}
+					/>
+					<Alert
+						message="Instructions"
+						description={
+							<ul style={{ margin: 0, paddingLeft: 20 }}>
+								<li><strong>Drag elements:</strong> Click and drag any orange-bordered element to move it</li>
+								<li><strong>Alignment guides:</strong> Blue crosshairs appear while dragging to help you align elements</li>
+								<li><strong>Snap to grid:</strong> Elements automatically snap to common alignment points</li>
+								<li><strong>Font info:</strong> See which font class is used in the dark badge (font-8-sans, font-8-display, etc.)</li>
+								<li><strong>Coordinates:</strong> Live position (L/T) and dimensions shown in orange bar</li>
+								<li><strong>Image upload:</strong> Click "📁 Upload" on the logo to change the image</li>
+								<li><strong>Console logs:</strong> Final positions logged to browser console (F12) when you release</li>
+							</ul>
+						}
+						type="warning"
+						showIcon
+						style={{ marginTop: 12 }}
+						closable
+					/>
+				</>
 			)}
 		</div>
 	)
