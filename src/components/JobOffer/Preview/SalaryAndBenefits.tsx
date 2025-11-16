@@ -32,6 +32,14 @@ export default function SalaryAndBenefits({ formData }: { formData: JobOfferForm
 			weekend: "weekend.png",
 			flexibility: "flexibility.png",
 		},
+		latest: {
+			plane: "airplane.png",
+			arrow: "arrow.png",
+			medicalShield: "medical-shield.png",
+			laptop: "laptop.png",
+			weekend: "weekend.png",
+			flexibility: "flexibility.png",
+		},
 	}
 
 	return (
