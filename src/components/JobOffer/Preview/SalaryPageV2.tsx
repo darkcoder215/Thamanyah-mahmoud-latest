@@ -4,7 +4,7 @@ import { formatNumbers } from "@/utils/helpers"
 import { type JobOfferFormData } from "../../Form/JobOfferFormTypes"
 import { managers } from "../../Form/ManagerSign"
 
-export default function SalaryPageV2({ formData }: { formData: JobOfferFormData }) {
+export default function SalaryPageV2({ formData, editMode = false, scale = 1 }: { formData: JobOfferFormData; editMode?: boolean; scale?: number }) {
 	// Find the selected manager's details
 	const selectedManager = formData.managerSignName
 		? managers.find((m) => m.value === formData.managerSignName)
@@ -14,7 +14,9 @@ export default function SalaryPageV2({ formData }: { formData: JobOfferFormData 
 		<div
 			className="page-v2 font-8-sans"
 			style={{
-				background: '#F2EEE4'
+				background: '#F2EEE4',
+				transform: `scale(${scale})`,
+				transformOrigin: 'top left'
 			}}
 		>
 			{/* Benefits heading */}

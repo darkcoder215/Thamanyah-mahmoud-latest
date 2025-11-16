@@ -5,9 +5,13 @@ import PageFooter from "@/components/Form/Preview/PageFooter"
 export default function BasicInfoPageV2({
 	formData,
 	levels,
+	editMode = false,
+	scale = 1,
 }: {
 	formData: JobOfferFormData
 	levels: JobOfferFormProps["levels"]
+	editMode?: boolean
+	scale?: number
 }) {
 	const firstName = formData.name.split(" ")[0]
 
@@ -15,7 +19,9 @@ export default function BasicInfoPageV2({
 		<div
 			className="page-v2 font-8-sans"
 			style={{
-				background: '#F2EEE4'
+				background: '#F2EEE4',
+				transform: `scale(${scale})`,
+				transformOrigin: 'top left'
 			}}
 		>
 			{/* Small black rectangle - decorative */}

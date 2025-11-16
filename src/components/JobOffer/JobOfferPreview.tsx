@@ -11,6 +11,7 @@ import CustomTemplateRenderer, { CustomTemplate } from "./CustomTemplateRenderer
 import CoverPageV2 from "./Preview/CoverPageV2"
 import BasicInfoPageV2 from "./Preview/BasicInfoPageV2"
 import SalaryPageV2 from "./Preview/SalaryPageV2"
+import PreviewControls from "./Preview/PreviewControls"
 import { Alert } from "antd"
 
 interface JobOfferPreviewProps {
@@ -21,6 +22,8 @@ interface JobOfferPreviewProps {
 
 const JobOfferPreview: React.FC<JobOfferPreviewProps> = ({ formData, levels, onEdit }) => {
 	const [customTemplate, setCustomTemplate] = useState<CustomTemplate | null>(null)
+	const [editMode, setEditMode] = useState(false)
+	const [scale, setScale] = useState(1)
 
 	// Load custom template if theme is custom
 	useEffect(() => {
@@ -106,10 +109,14 @@ const JobOfferPreview: React.FC<JobOfferPreviewProps> = ({ formData, levels, onE
 	if (formData.theme === "latest") {
 		return (
 			<>
+				<PreviewControls
+					onEditModeToggle={setEditMode}
+					onScaleChange={setScale}
+				/>
 				<div className="overflow-x-auto">
-					<CoverPageV2 name={formData.name} />
-					<BasicInfoPageV2 formData={formData} levels={levels} />
-					<SalaryPageV2 formData={formData} />
+					<CoverPageV2 name={formData.name} editMode={editMode} scale={scale} />
+					<BasicInfoPageV2 formData={formData} levels={levels} editMode={editMode} scale={scale} />
+					<SalaryPageV2 formData={formData} editMode={editMode} scale={scale} />
 					<Outro />
 				</div>
 				<PreviewActions
