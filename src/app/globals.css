@@ -57,9 +57,8 @@ label.eight-form-item-required::before {
 
 .page-v2 {
 	@apply mx-auto border-0;
-	size: A4;
-	height: 297mm;
-	width: 210mm;
+	width: 595px;
+	height: 842px;
 	background: var(--background);
 	color: var(--foreground);
 	padding: 0;
@@ -91,7 +90,20 @@ label.eight-form-item-required::before {
 		display: none !important;
 	}
 
-	.page-v2,
+	.page-v2 {
+		width: 210mm;
+		height: 297mm;
+		outline: 1px solid #000;
+		border: 0;
+		--background: #f2eee4;
+		--foreground: #171717;
+		-webkit-print-color-adjust: exact;
+		margin: 0;
+		padding: 0;
+		transform: scale(1.334) !important;
+		transform-origin: top left;
+	}
+
 	.page-2,
 	.page {
 		/* size: landscape; */

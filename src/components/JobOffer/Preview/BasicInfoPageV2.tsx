@@ -19,9 +19,7 @@ export default function BasicInfoPageV2({
 		<div
 			className="page-v2 font-8-sans"
 			style={{
-				background: '#F2EEE4',
-				transform: `scale(${scale})`,
-				transformOrigin: 'top left'
+				background: '#F2EEE4'
 			}}
 		>
 			{/* Small black rectangle - decorative */}

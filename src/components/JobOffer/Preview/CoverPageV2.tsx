@@ -22,7 +22,7 @@ export default function CoverPageV2({ name, editMode = false, scale = 1 }: Cover
 	return (
 		<div
 			className="page-v2 mb-4 border-0! bg-black! print:bg-black!"
-			style={{ background: 'black', transform: `scale(${scale})`, transformOrigin: 'top left' }}
+			style={{ background: 'black' }}
 		>
 			{/* Thmanyah Logo */}
 			{editMode ? (
