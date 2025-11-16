@@ -131,6 +131,16 @@ label.eight-form-item-required::before {
 	font-family: var(--thmanyah-serif);
 }
 
+/* Custom template rendering fixes for Figma HTML */
+.page .figma-content {
+	/* Reset absolute positioning from Figma */
+	position: relative !important;
+	/* Ensure content fits within page */
+	max-width: 100%;
+	/* Maintain aspect ratio if needed */
+	height: auto;
+}
+
 .selected-row td {
 	border: none !important;
 	font-weight: 600;

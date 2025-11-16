@@ -329,6 +329,7 @@ const CustomTemplates: React.FC = () => {
 			<div className="mb-4 rounded bg-blue-50 p-4 text-sm text-blue-800">
 				<strong>💡 كيف تعمل القوالب المخصصة؟</strong>
 				<ol className="mt-2 list-inside list-decimal space-y-1">
+					<li>صمم قالبك في Figma بحجم A4 (210mm × 297mm)</li>
 					<li>انسخ كود HTML من Figma (Dev Mode → HTML)</li>
 					<li>الصق الكود في النموذج</li>
 					<li>سيتم اكتشاف كل النصوص تلقائيًا</li>
@@ -336,6 +337,15 @@ const CustomTemplates: React.FC = () => {
 					<li>يمكنك إضافة حقول مخصصة جديدة</li>
 					<li>معاينة القالب ثم حفظه</li>
 				</ol>
+				<div className="mt-3 rounded bg-blue-100 p-2 text-xs">
+					<strong>📌 نصائح مهمة:</strong>
+					<ul className="mt-1 list-inside list-disc space-y-0.5">
+						<li>استخدم نصوص واضحة قابلة للقراءة في التصميم</li>
+						<li>تجنب التصاميم المعقدة بطبقات متعددة</li>
+						<li>تأكد من أن جميع العناصر مرئية (ليست مخفية أو شفافة)</li>
+						<li>اختبر القالب في المعاينة قبل الحفظ</li>
+					</ul>
+				</div>
 			</div>
 
 			{templates.length === 0 ? (
@@ -435,12 +445,16 @@ const CustomTemplates: React.FC = () => {
 							<label className="mb-1 block text-sm font-medium">كود HTML من Figma *</label>
 							<div className="mb-2 rounded bg-yellow-50 p-2 text-xs text-yellow-800">
 								<strong>📌 كيفية النسخ من Figma:</strong>
-								<ol className="mt-1 list-inside list-decimal">
-									<li>افتح Figma وحدد الإطار (Frame)</li>
+								<ol className="mt-1 list-inside list-decimal space-y-0.5">
+									<li>صمم الإطار (Frame) بحجم A4: 210mm × 297mm</li>
+									<li>افتح Figma وحدد الإطار</li>
 									<li>اضغط على Dev Mode في الأعلى</li>
-									<li>اختر "HTML" من القائمة المنسدلة</li>
+									<li>اختر "HTML" من القائمة المنسدلة (ليس JSX)</li>
 									<li>انسخ الكود والصقه هنا</li>
 								</ol>
+								<div className="mt-2 rounded bg-yellow-100 p-1.5">
+									<strong>⚠️ ملاحظة:</strong> تأكد من نسخ HTML وليس JSX/React
+								</div>
 							</div>
 							<TextArea
 								value={formHtmlCode}
@@ -600,26 +614,26 @@ const CustomTemplates: React.FC = () => {
 						</div>
 
 						<div className="rounded bg-yellow-50 p-3 text-xs text-yellow-800">
-							<strong>⚠️ إذا كانت المعاينة فارغة:</strong>
-							<ul className="mt-1 list-inside list-disc">
-								<li>تأكد من أن كود HTML يحتوي على محتوى مرئي</li>
-								<li>تحقق من أن الأنماط (styles) تحتوي على أبعاد (width, height)</li>
-								<li>تأكد من أن النصوص المربوطة موجودة في الكود</li>
-								<li>افحص HTML الخام أدناه</li>
+							<strong>⚠️ إذا كانت المعاينة فارغة أو غير صحيحة:</strong>
+							<ul className="mt-1 list-inside list-disc space-y-1">
+								<li>تأكد من أن كود HTML يحتوي على محتوى مرئي (نصوص، عناصر)</li>
+								<li>تحقق من أن العناصر لديها أبعاد (width, height) في الـ styles</li>
+								<li>تجنب استخدام position: absolute من Figma - قد يتسبب في مشاكل</li>
+								<li>تأكد من أن الخطوط والألوان واضحة</li>
+								<li>افحص HTML الخام أدناه وافتح وحدة التحكم (F12)</li>
+								<li>القالب سيكون بحجم A4 (210mm × 297mm) مع padding</li>
 							</ul>
 						</div>
 
 						<div>
 							<div className="mb-2 text-sm font-medium">معاينة مرئية:</div>
-							<div
-								className="overflow-auto rounded border-2 border-blue-500 bg-white p-6"
-								style={{
-									direction: "rtl",
-									minHeight: "400px",
-									maxHeight: "600px"
-								}}
-								dangerouslySetInnerHTML={{ __html: generatePreviewHTML() }}
-							/>
+							<div className="overflow-auto rounded border-2 border-blue-500 bg-white" style={{ maxHeight: "800px" }}>
+								<div
+									className="page font-8-sans text-[14pt] font-light"
+									dir="rtl"
+									dangerouslySetInnerHTML={{ __html: generatePreviewHTML() }}
+								/>
+							</div>
 						</div>
 
 						<details className="rounded border bg-gray-50 p-3">
