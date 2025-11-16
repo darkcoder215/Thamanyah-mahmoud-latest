@@ -1,28 +1,56 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { Button, Card, Input, message, Modal, Upload } from "antd"
-import { PlusOutlined, EditOutlined, DeleteOutlined, InboxOutlined } from "@ant-design/icons"
+import { Button, Card, Input, message, Modal, Steps, Select, Form, Tag, Space, Divider } from "antd"
+import { PlusOutlined, EditOutlined, DeleteOutlined, ArrowRightOutlined, ArrowLeftOutlined } from "@ant-design/icons"
+import { CustomTemplate, CustomField } from "@/components/JobOffer/CustomTemplateRenderer"
 
 const { TextArea } = Input
+const { Step } = Steps
+const { Option } = Select
 
-export interface CustomTemplate {
-	id: string
-	name: string
-	description: string
-	htmlCode: string // Simple HTML with {formData.xxx} placeholders
-	previewImage?: string // Optional screenshot for preview
-	createdAt: string
-}
+// Standard fields available in JobOfferFormData
+const STANDARD_FIELDS = [
+	{ value: "name", label: "اسم الموظف", type: "text" },
+	{ value: "email", label: "البريد الإلكتروني", type: "text" },
+	{ value: "jobTitle", label: "المسمى الوظيفي", type: "text" },
+	{ value: "jobTitleEn", label: "المسمى الوظيفي (إنجليزي)", type: "text" },
+	{ value: "workType", label: "نوع الدوام", type: "text" },
+	{ value: "directManager", label: "المدير المباشر", type: "text" },
+	{ value: "directManagerJobTitle", label: "مسمى المدير المباشر", type: "text" },
+	{ value: "team", label: "الفريق", type: "text" },
+	{ value: "department", label: "القسم", type: "text" },
+	{ value: "level", label: "المستوى", type: "number" },
+	{ value: "monthlySalary", label: "الراتب الشهري", type: "number" },
+	{ value: "basicSalary", label: "الراتب الأساسي", type: "number" },
+	{ value: "housingAllowance", label: "بدل السكن", type: "number" },
+	{ value: "transportAllowance", label: "بدل النقل", type: "number" },
+	{ value: "additionalAllowances", label: "بدلات إضافية", type: "number" },
+	{ value: "netSalary", label: "صافي الراتب", type: "number" },
+	{ value: "managerSignName", label: "اسم المدير الموقع", type: "text" },
+	{ value: "contractDuration", label: "مدة العقد", type: "text" },
+]
 
 const CustomTemplates: React.FC = () => {
 	const [templates, setTemplates] = useState<CustomTemplate[]>([])
 	const [isModalOpen, setIsModalOpen] = useState(false)
 	const [editingTemplate, setEditingTemplate] = useState<CustomTemplate | null>(null)
+	const [currentStep, setCurrentStep] = useState(0)
+
+	// Step 1: Basic info
 	const [formName, setFormName] = useState("")
 	const [formDescription, setFormDescription] = useState("")
 	const [formHtmlCode, setFormHtmlCode] = useState("")
-	const [previewImage, setPreviewImage] = useState("")
+
+	// Step 2: Text mapping
+	const [detectedTexts, setDetectedTexts] = useState<string[]>([])
+	const [fieldMappings, setFieldMappings] = useState<Record<string, string>>({})
+	const [customFields, setCustomFields] = useState<CustomField[]>([])
+
+	// New custom field form
+	const [newFieldName, setNewFieldName] = useState("")
+	const [newFieldLabel, setNewFieldLabel] = useState("")
+	const [newFieldType, setNewFieldType] = useState<"text" | "number">("text")
 
 	// Load templates from localStorage
 	useEffect(() => {
@@ -42,7 +70,74 @@ const CustomTemplates: React.FC = () => {
 		setTemplates(newTemplates)
 	}
 
-	const handleSave = () => {
+	// Extract text from HTML
+	const extractTextFromHTML = (html: string): string[] => {
+		const parser = new DOMParser()
+		const doc = parser.parseFromString(html, 'text/html')
+		const texts: string[] = []
+
+		const walk = (node: Node) => {
+			if (node.nodeType === Node.TEXT_NODE) {
+				const text = node.textContent?.trim()
+				if (text && text.length > 0) {
+					texts.push(text)
+				}
+			} else if (node.nodeType === Node.ELEMENT_NODE) {
+				node.childNodes.forEach(walk)
+			}
+		}
+
+		walk(doc.body)
+
+		// Remove duplicates and filter out very short texts
+		return Array.from(new Set(texts)).filter(t => t.length > 1)
+	}
+
+	// Smart field suggestion based on text content
+	const suggestField = (text: string): string | null => {
+		const lowerText = text.toLowerCase()
+
+		// Check for numbers (likely salary)
+		if (/^\d{1,3}(,\d{3})*(\.\d+)?$/.test(text) || /\d+/.test(text)) {
+			if (text.includes(',') || parseInt(text.replace(/,/g, '')) > 1000) {
+				return "monthlySalary"
+			}
+			return "level"
+		}
+
+		// Check for email pattern
+		if (/@/.test(text)) {
+			return "email"
+		}
+
+		// Arabic text patterns
+		if (text.includes('مدير') || text.includes('Manager')) {
+			if (text.length < 30) return "directManager"
+			return "directManagerJobTitle"
+		}
+
+		if (text.includes('الفريق') || text.includes('فريق')) {
+			return "team"
+		}
+
+		if (text.includes('القسم') || text.includes('قسم') || text.includes('إدارة')) {
+			return "department"
+		}
+
+		// Short Arabic text likely a name
+		if (/^[\u0600-\u06FF\s]{2,30}$/.test(text)) {
+			return "name"
+		}
+
+		// Longer text might be job title
+		if (text.length > 5 && text.length < 50) {
+			return "jobTitle"
+		}
+
+		return null
+	}
+
+	const handleStep1Next = () => {
 		if (!formName.trim()) {
 			message.error("الرجاء إدخال اسم القالب")
 			return
@@ -52,32 +147,85 @@ const CustomTemplates: React.FC = () => {
 			return
 		}
 
+		// Extract text and auto-suggest mappings
+		const texts = extractTextFromHTML(formHtmlCode)
+		setDetectedTexts(texts)
+
+		// Auto-suggest field mappings
+		const autoMappings: Record<string, string> = {}
+		texts.forEach(text => {
+			const suggestion = suggestField(text)
+			if (suggestion) {
+				autoMappings[text] = suggestion
+			}
+		})
+		setFieldMappings(autoMappings)
+
+		setCurrentStep(1)
+	}
+
+	const handleFieldMappingChange = (text: string, fieldName: string) => {
+		setFieldMappings(prev => ({
+			...prev,
+			[text]: fieldName
+		}))
+	}
+
+	const handleAddCustomField = () => {
+		if (!newFieldName.trim() || !newFieldLabel.trim()) {
+			message.error("الرجاء إدخال اسم الحقل والعنوان")
+			return
+		}
+
+		// Check if field already exists
+		if (STANDARD_FIELDS.some(f => f.value === newFieldName) ||
+		    customFields.some(f => f.name === newFieldName)) {
+			message.error("هذا الحقل موجود بالفعل")
+			return
+		}
+
+		const newField: CustomField = {
+			name: newFieldName,
+			label: newFieldLabel,
+			type: newFieldType
+		}
+
+		setCustomFields(prev => [...prev, newField])
+		message.success(`تم إضافة الحقل "${newFieldLabel}"`)
+
+		// Reset form
+		setNewFieldName("")
+		setNewFieldLabel("")
+		setNewFieldType("text")
+	}
+
+	const handleStep2Next = () => {
+		// Check if all texts are mapped
+		const unmapped = detectedTexts.filter(text => !fieldMappings[text])
+		if (unmapped.length > 0) {
+			message.warning(`يوجد ${unmapped.length} نص غير مرتبط. يمكنك المتابعة أو ربطهم أولاً.`)
+		}
+
+		setCurrentStep(2)
+	}
+
+	const handleSave = () => {
+		const template: CustomTemplate = {
+			id: editingTemplate?.id || `template-${Date.now()}`,
+			name: formName,
+			description: formDescription,
+			htmlCode: formHtmlCode,
+			fieldMappings,
+			customFields,
+			createdAt: editingTemplate?.createdAt || new Date().toISOString(),
+		}
+
 		if (editingTemplate) {
-			// Update existing
-			const updated = templates.map((t) =>
-				t.id === editingTemplate.id
-					? {
-							...t,
-							name: formName,
-							description: formDescription,
-							htmlCode: formHtmlCode,
-							previewImage,
-					  }
-					: t,
-			)
+			const updated = templates.map(t => t.id === editingTemplate.id ? template : t)
 			saveTemplates(updated)
 			message.success("تم تحديث القالب بنجاح")
 		} else {
-			// Create new
-			const newTemplate: CustomTemplate = {
-				id: `template-${Date.now()}`,
-				name: formName,
-				description: formDescription,
-				htmlCode: formHtmlCode,
-				previewImage,
-				createdAt: new Date().toISOString(),
-			}
-			saveTemplates([...templates, newTemplate])
+			saveTemplates([...templates, template])
 			message.success("تم إنشاء القالب بنجاح")
 		}
 
@@ -91,7 +239,7 @@ const CustomTemplates: React.FC = () => {
 			okText: "حذف",
 			cancelText: "إلغاء",
 			onOk: () => {
-				const filtered = templates.filter((t) => t.id !== id)
+				const filtered = templates.filter(t => t.id !== id)
 				saveTemplates(filtered)
 				message.success("تم حذف القالب بنجاح")
 			},
@@ -103,7 +251,9 @@ const CustomTemplates: React.FC = () => {
 		setFormName(template.name)
 		setFormDescription(template.description)
 		setFormHtmlCode(template.htmlCode)
-		setPreviewImage(template.previewImage || "")
+		setFieldMappings(template.fieldMappings || {})
+		setCustomFields(template.customFields || [])
+		setCurrentStep(0)
 		setIsModalOpen(true)
 	}
 
@@ -113,16 +263,45 @@ const CustomTemplates: React.FC = () => {
 		setFormName("")
 		setFormDescription("")
 		setFormHtmlCode("")
-		setPreviewImage("")
+		setFieldMappings({})
+		setCustomFields([])
+		setDetectedTexts([])
+		setCurrentStep(0)
+		setNewFieldName("")
+		setNewFieldLabel("")
+		setNewFieldType("text")
 	}
 
-	const handleImageUpload = (file: File) => {
-		const reader = new FileReader()
-		reader.onload = () => {
-			setPreviewImage(reader.result as string)
+	const generatePreviewHTML = (): string => {
+		let html = formHtmlCode
+
+		// Replace mapped text with sample values
+		const sampleData: Record<string, any> = {
+			name: "أحمد محمد",
+			email: "ahmed@example.com",
+			jobTitle: "مدير محتوى",
+			jobTitleEn: "Content Manager",
+			workType: "كامل",
+			directManager: "علي أحمد",
+			directManagerJobTitle: "مدير القسم",
+			team: "المحتوى",
+			department: "التحرير",
+			level: 2,
+			monthlySalary: "15,000",
+			basicSalary: "8,500",
+			housingAllowance: "4,000",
+			transportAllowance: "500",
+			additionalAllowances: "2,000",
+			netSalary: "14,250",
 		}
-		reader.readAsDataURL(file)
-		return false // Prevent auto upload
+
+		Object.entries(fieldMappings).forEach(([text, fieldName]) => {
+			const value = sampleData[fieldName] || `[${fieldName}]`
+			const escapedText = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+			html = html.replace(new RegExp(escapedText, 'g'), String(value))
+		})
+
+		return html
 	}
 
 	return (
@@ -141,18 +320,14 @@ const CustomTemplates: React.FC = () => {
 
 			<div className="mb-4 rounded bg-blue-50 p-4 text-sm text-blue-800">
 				<strong>💡 كيف تعمل القوالب المخصصة؟</strong>
-				<ul className="mt-2 list-inside list-disc space-y-1">
-					<li>
-						اكتب كود HTML بسيط (ليس JSX أو React!)
-					</li>
-					<li>
-						استخدم المتغيرات مثل: <code className="rounded bg-blue-100 px-1">{"{formData.name}"}</code>,{" "}
-						<code className="rounded bg-blue-100 px-1">{"{formData.jobTitle}"}</code>,{" "}
-						<code className="rounded bg-blue-100 px-1">{"{formData.monthlySalary}"}</code>
-					</li>
-					<li>سيتم استبدال هذه المتغيرات تلقائيًا بالبيانات الفعلية عند إنشاء العرض</li>
-					<li>يمكنك استخدام inline CSS مباشرة: <code className="rounded bg-blue-100 px-1">{`style="color: red; font-size: 20px"`}</code></li>
-				</ul>
+				<ol className="mt-2 list-inside list-decimal space-y-1">
+					<li>انسخ كود HTML من Figma (Dev Mode → HTML)</li>
+					<li>الصق الكود في النموذج</li>
+					<li>سيتم اكتشاف كل النصوص تلقائيًا</li>
+					<li>اربط كل نص بحقل من البيانات (مثل: الاسم، المسمى الوظيفي، الراتب)</li>
+					<li>يمكنك إضافة حقول مخصصة جديدة</li>
+					<li>معاينة القالب ثم حفظه</li>
+				</ol>
 			</div>
 
 			{templates.length === 0 ? (
@@ -170,19 +345,6 @@ const CustomTemplates: React.FC = () => {
 						<Card
 							key={template.id}
 							hoverable
-							cover={
-								template.previewImage ? (
-									<img
-										alt={template.name}
-										src={template.previewImage}
-										className="h-48 object-cover"
-									/>
-								) : (
-									<div className="flex h-48 items-center justify-center bg-gray-100 text-gray-400">
-										لا توجد صورة معاينة
-									</div>
-								)
-							}
 							actions={[
 								<Button
 									key="edit"
@@ -208,6 +370,12 @@ const CustomTemplates: React.FC = () => {
 								description={
 									<div>
 										<p className="mb-2 text-xs text-gray-600">{template.description}</p>
+										<div className="mb-2">
+											<Tag color="blue">{Object.keys(template.fieldMappings || {}).length} نص مربوط</Tag>
+											{template.customFields && template.customFields.length > 0 && (
+												<Tag color="green">{template.customFields.length} حقل مخصص</Tag>
+											)}
+										</div>
 										<p className="text-xs text-gray-400">
 											تم الإنشاء: {new Date(template.createdAt).toLocaleDateString("ar-SA")}
 										</p>
@@ -223,80 +391,228 @@ const CustomTemplates: React.FC = () => {
 				title={editingTemplate ? "تعديل القالب" : "إنشاء قالب جديد"}
 				open={isModalOpen}
 				onCancel={handleCloseModal}
-				width={900}
-				footer={[
-					<Button key="cancel" onClick={handleCloseModal}>
-						إلغاء
-					</Button>,
-					<Button key="save" type="primary" onClick={handleSave}>
-						{editingTemplate ? "حفظ التغييرات" : "إنشاء القالب"}
-					</Button>,
-				]}
+				width={1000}
+				footer={null}
 			>
-				<div className="space-y-4">
-					<div>
-						<label className="mb-1 block text-sm font-medium">اسم القالب *</label>
-						<Input
-							value={formName}
-							onChange={(e) => setFormName(e.target.value)}
-							placeholder="مثال: قالب العرض الوظيفي - الأزرق"
-							size="large"
-						/>
-					</div>
+				<Steps current={currentStep} className="mb-6">
+					<Step title="المعلومات الأساسية" />
+					<Step title="ربط النصوص" />
+					<Step title="المعاينة والحفظ" />
+				</Steps>
 
-					<div>
-						<label className="mb-1 block text-sm font-medium">وصف القالب</label>
-						<Input
-							value={formDescription}
-							onChange={(e) => setFormDescription(e.target.value)}
-							placeholder="وصف مختصر للقالب"
-							size="large"
-						/>
-					</div>
-
-					<div>
-						<label className="mb-1 block text-sm font-medium">صورة المعاينة (اختياري)</label>
-						<Upload
-							accept="image/*"
-							showUploadList={false}
-							beforeUpload={handleImageUpload}
-							maxCount={1}
-						>
-							<Button icon={<InboxOutlined />}>رفع صورة معاينة</Button>
-						</Upload>
-						{previewImage && (
-							<img
-								src={previewImage}
-								alt="Preview"
-								className="mt-2 h-32 rounded border object-cover"
+				{/* Step 1: Basic Info */}
+				{currentStep === 0 && (
+					<div className="space-y-4">
+						<div>
+							<label className="mb-1 block text-sm font-medium">اسم القالب *</label>
+							<Input
+								value={formName}
+								onChange={(e) => setFormName(e.target.value)}
+								placeholder="مثال: قالب العرض الوظيفي - الأزرق"
+								size="large"
 							/>
-						)}
-					</div>
-
-					<div>
-						<label className="mb-1 block text-sm font-medium">كود HTML *</label>
-						<div className="mb-2 rounded bg-yellow-50 p-2 text-xs text-yellow-800">
-							<strong>مثال:</strong>
-							<pre className="mt-1 overflow-auto">
-								{`<div style="padding: 20px; background: #f5f5f5;">
-  <h1 style="color: #333;">{formData.name}</h1>
-  <p>المسمى الوظيفي: {formData.jobTitle}</p>
-  <p>الراتب: {formData.monthlySalary} ريال</p>
-</div>`}
-							</pre>
 						</div>
-						<TextArea
-							value={formHtmlCode}
-							onChange={(e) => setFormHtmlCode(e.target.value)}
-							placeholder="الصق كود HTML هنا..."
-							rows={15}
-							style={{ fontFamily: "monospace", fontSize: "13px" }}
-						/>
-						<p className="mt-1 text-xs text-gray-500">
-							عدد الأحرف: {formHtmlCode.length}
-						</p>
+
+						<div>
+							<label className="mb-1 block text-sm font-medium">وصف القالب</label>
+							<Input
+								value={formDescription}
+								onChange={(e) => setFormDescription(e.target.value)}
+								placeholder="وصف مختصر للقالب"
+								size="large"
+							/>
+						</div>
+
+						<div>
+							<label className="mb-1 block text-sm font-medium">كود HTML من Figma *</label>
+							<div className="mb-2 rounded bg-yellow-50 p-2 text-xs text-yellow-800">
+								<strong>📌 كيفية النسخ من Figma:</strong>
+								<ol className="mt-1 list-inside list-decimal">
+									<li>افتح Figma وحدد الإطار (Frame)</li>
+									<li>اضغط على Dev Mode في الأعلى</li>
+									<li>اختر "HTML" من القائمة المنسدلة</li>
+									<li>انسخ الكود والصقه هنا</li>
+								</ol>
+							</div>
+							<TextArea
+								value={formHtmlCode}
+								onChange={(e) => setFormHtmlCode(e.target.value)}
+								placeholder="الصق كود HTML من Figma هنا..."
+								rows={15}
+								style={{ fontFamily: "monospace", fontSize: "13px" }}
+							/>
+							<p className="mt-1 text-xs text-gray-500">
+								عدد الأحرف: {formHtmlCode.length}
+							</p>
+						</div>
+
+						<div className="flex justify-end gap-2">
+							<Button onClick={handleCloseModal}>إلغاء</Button>
+							<Button type="primary" icon={<ArrowLeftOutlined />} onClick={handleStep1Next}>
+								التالي: ربط النصوص
+							</Button>
+						</div>
 					</div>
-				</div>
+				)}
+
+				{/* Step 2: Text Mapping */}
+				{currentStep === 1 && (
+					<div className="space-y-4">
+						<div className="rounded bg-green-50 p-3 text-sm text-green-800">
+							<strong>✅ تم اكتشاف {detectedTexts.length} نص في الكود</strong>
+							<p className="mt-1">اربط كل نص بحقل من البيانات. تم اقتراح ربط تلقائي ذكي، يمكنك تعديله.</p>
+						</div>
+
+						<div className="max-h-96 space-y-3 overflow-y-auto rounded border p-4">
+							{detectedTexts.map((text, index) => (
+								<div key={index} className="flex items-start gap-3 rounded border bg-gray-50 p-3">
+									<div className="flex-1">
+										<div className="mb-1 text-xs font-medium text-gray-500">النص المكتشف:</div>
+										<div className="rounded bg-white p-2 text-sm">{text}</div>
+									</div>
+									<div className="flex-1">
+										<div className="mb-1 text-xs font-medium text-gray-500">ربط بحقل:</div>
+										<Select
+											value={fieldMappings[text]}
+											onChange={(value) => handleFieldMappingChange(text, value)}
+											placeholder="اختر حقل..."
+											style={{ width: "100%" }}
+											allowClear
+										>
+											<Option value="">لا تربط هذا النص</Option>
+											<Select.OptGroup label="الحقول القياسية">
+												{STANDARD_FIELDS.map(field => (
+													<Option key={field.value} value={field.value}>
+														{field.label}
+													</Option>
+												))}
+											</Select.OptGroup>
+											{customFields.length > 0 && (
+												<Select.OptGroup label="الحقول المخصصة">
+													{customFields.map(field => (
+														<Option key={field.name} value={field.name}>
+															{field.label} (مخصص)
+														</Option>
+													))}
+												</Select.OptGroup>
+											)}
+										</Select>
+									</div>
+								</div>
+							))}
+						</div>
+
+						<Divider>إضافة حقل مخصص جديد</Divider>
+
+						<div className="rounded border bg-blue-50 p-4">
+							<p className="mb-3 text-sm text-blue-800">
+								إذا لم تجد الحقل المناسب، يمكنك إنشاء حقل مخصص جديد
+							</p>
+							<div className="grid gap-3 md:grid-cols-3">
+								<div>
+									<label className="mb-1 block text-xs font-medium">اسم الحقل (إنجليزي)</label>
+									<Input
+										value={newFieldName}
+										onChange={(e) => setNewFieldName(e.target.value)}
+										placeholder="companyName"
+										size="small"
+									/>
+								</div>
+								<div>
+									<label className="mb-1 block text-xs font-medium">العنوان (عربي)</label>
+									<Input
+										value={newFieldLabel}
+										onChange={(e) => setNewFieldLabel(e.target.value)}
+										placeholder="اسم الشركة"
+										size="small"
+									/>
+								</div>
+								<div>
+									<label className="mb-1 block text-xs font-medium">النوع</label>
+									<Select
+										value={newFieldType}
+										onChange={(value) => setNewFieldType(value)}
+										size="small"
+										style={{ width: "100%" }}
+									>
+										<Option value="text">نص</Option>
+										<Option value="number">رقم</Option>
+									</Select>
+								</div>
+							</div>
+							<Button
+								type="dashed"
+								icon={<PlusOutlined />}
+								onClick={handleAddCustomField}
+								size="small"
+								className="mt-3"
+							>
+								إضافة الحقل
+							</Button>
+
+							{customFields.length > 0 && (
+								<div className="mt-3">
+									<div className="text-xs font-medium text-gray-600">الحقول المخصصة المضافة:</div>
+									<Space wrap className="mt-2">
+										{customFields.map(field => (
+											<Tag
+												key={field.name}
+												color="green"
+												closable
+												onClose={() => setCustomFields(prev => prev.filter(f => f.name !== field.name))}
+											>
+												{field.label} ({field.type})
+											</Tag>
+										))}
+									</Space>
+								</div>
+							)}
+						</div>
+
+						<div className="flex justify-between">
+							<Button icon={<ArrowRightOutlined />} onClick={() => setCurrentStep(0)}>
+								السابق
+							</Button>
+							<Button type="primary" icon={<ArrowLeftOutlined />} onClick={handleStep2Next}>
+								التالي: المعاينة
+							</Button>
+						</div>
+					</div>
+				)}
+
+				{/* Step 3: Preview */}
+				{currentStep === 2 && (
+					<div className="space-y-4">
+						<div className="rounded bg-blue-50 p-3 text-sm text-blue-800">
+							<strong>👁️ معاينة القالب</strong>
+							<p className="mt-1">هذه معاينة بيانات تجريبية. سيتم استبدالها بالبيانات الفعلية عند الاستخدام.</p>
+						</div>
+
+						<div
+							className="max-h-96 overflow-auto rounded border bg-white p-6"
+							style={{ direction: "rtl" }}
+							dangerouslySetInnerHTML={{ __html: generatePreviewHTML() }}
+						/>
+
+						<div className="rounded bg-gray-50 p-3">
+							<div className="text-xs font-medium text-gray-600">ملخص القالب:</div>
+							<ul className="mt-2 list-inside list-disc text-sm text-gray-700">
+								<li>{Object.keys(fieldMappings).length} نص مربوط بحقول البيانات</li>
+								<li>{customFields.length} حقل مخصص جديد</li>
+								<li>{detectedTexts.length - Object.keys(fieldMappings).length} نص غير مربوط (سيبقى كما هو)</li>
+							</ul>
+						</div>
+
+						<div className="flex justify-between">
+							<Button icon={<ArrowRightOutlined />} onClick={() => setCurrentStep(1)}>
+								السابق
+							</Button>
+							<Button type="primary" onClick={handleSave}>
+								{editingTemplate ? "حفظ التغييرات" : "إنشاء القالب"}
+							</Button>
+						</div>
+					</div>
+				)}
 			</Modal>
 		</div>
 	)

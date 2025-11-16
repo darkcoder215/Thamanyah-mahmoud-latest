@@ -5,11 +5,19 @@ import PageFooter from "@/components/Form/Preview/PageFooter"
 import { JobOfferFormData } from "@/components/Form/JobOfferFormTypes"
 import { formatNumbers } from "@/utils/helpers"
 
+export interface CustomField {
+	name: string // Internal field name (e.g., "companyName")
+	label: string // Display label in Arabic (e.g., "اسم الشركة")
+	type: "text" | "number" // Field type
+}
+
 export interface CustomTemplate {
 	id: string
 	name: string
 	description: string
-	htmlCode: string
+	htmlCode: string // HTML with text that will be mapped
+	fieldMappings: Record<string, string> // text → field name mapping
+	customFields: CustomField[] // Additional fields beyond standard formData
 	previewImage?: string
 	createdAt: string
 }
@@ -26,27 +34,34 @@ const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 	const renderedHTML = useMemo(() => {
 		console.log("🎨 Rendering custom template:", template.name)
 		console.log("📊 Form data:", formData)
+		console.log("🗺️ Field mappings:", template.fieldMappings)
 
 		let html = template.htmlCode
 
 		try {
-			// Replace {formData.field} placeholders with actual values
-			console.log("📝 Replacing form data placeholders...")
-			html = html.replace(/\{formData\.(\w+)\}/g, (match, fieldName) => {
+			// Replace each mapped text with its corresponding field value
+			Object.entries(template.fieldMappings).forEach(([originalText, fieldName]) => {
 				const value = formData[fieldName as keyof JobOfferFormData]
 
-				// Format numbers
+				let replacementValue = ""
+
+				// Format the value based on type
 				if (typeof value === "number") {
-					return formatNumbers(value)
+					replacementValue = formatNumbers(value)
+				} else if (Array.isArray(value)) {
+					replacementValue = value.join(", ")
+				} else {
+					replacementValue = String(value || "")
 				}
 
-				// Join arrays
-				if (Array.isArray(value)) {
-					return value.join(", ")
-				}
+				// Escape special regex characters in the original text
+				const escapedText = originalText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-				// Return as string
-				return String(value || "")
+				// Replace all occurrences of the original text
+				const regex = new RegExp(escapedText, 'g')
+				html = html.replace(regex, replacementValue)
+
+				console.log(`📝 Replaced "${originalText}" with "${replacementValue}"`)
 			})
 
 			console.log("✅ Template rendering complete!")

@@ -102,55 +102,111 @@ const BasicInfo: React.FC<JobOfferFormProps> = ({ formData, setFormData, levels 
 
 			{/* Custom template selector */}
 			{formData.theme === "custom" && (
-				<Form.Item
-					label="اختر القالب المخصص"
-					name="customTemplateId"
-					rules={[
-						{
-							required: true,
-							message: "الرجاء اختيار قالب مخصص",
-						},
-					]}
-				>
-					{customTemplates.length === 0 ? (
-						<Alert
-							message="لا توجد قوالب مخصصة"
-							description={
-								<span>
-									قم بإنشاء قالب مخصص من صفحة{" "}
-									<a href="/custom-templates" target="_blank">
-										إدارة القوالب المخصصة
-									</a>
-								</span>
-							}
-							type="warning"
-							showIcon
-						/>
-					) : (
-						<Select
-							value={formData.customTemplateId}
-							onChange={(value) =>
-								setFormData({
-									...formData,
-									customTemplateId: value,
-								})
-							}
-							placeholder="اختر قالبًا من القائمة"
-						>
-							{customTemplates.map((template) => (
-								<Option key={template.id} value={template.id}>
-									{template.name}
-									{template.description && (
-										<span className="text-xs text-gray-500">
-											{" "}
-											- {template.description}
-										</span>
-									)}
-								</Option>
-							))}
-						</Select>
-					)}
-				</Form.Item>
+				<>
+					<Form.Item
+						label="اختر القالب المخصص"
+						name="customTemplateId"
+						rules={[
+							{
+								required: true,
+								message: "الرجاء اختيار قالب مخصص",
+							},
+						]}
+					>
+						{customTemplates.length === 0 ? (
+							<Alert
+								message="لا توجد قوالب مخصصة"
+								description={
+									<span>
+										قم بإنشاء قالب مخصص من صفحة{" "}
+										<a href="/custom-templates" target="_blank">
+											إدارة القوالب المخصصة
+										</a>
+									</span>
+								}
+								type="warning"
+								showIcon
+							/>
+						) : (
+							<Select
+								value={formData.customTemplateId}
+								onChange={(value) =>
+									setFormData({
+										...formData,
+										customTemplateId: value,
+									})
+								}
+								placeholder="اختر قالبًا من القائمة"
+							>
+								{customTemplates.map((template) => (
+									<Option key={template.id} value={template.id}>
+										{template.name}
+										{template.description && (
+											<span className="text-xs text-gray-500">
+												{" "}
+												- {template.description}
+											</span>
+										)}
+									</Option>
+								))}
+							</Select>
+						)}
+					</Form.Item>
+
+					{/* Custom fields for selected template */}
+					{formData.customTemplateId && (() => {
+						const selectedTemplate = customTemplates.find(t => t.id === formData.customTemplateId)
+						if (!selectedTemplate || !selectedTemplate.customFields || selectedTemplate.customFields.length === 0) {
+							return null
+						}
+
+						return (
+							<>
+								<Alert
+									message="حقول مخصصة للقالب"
+									description={`يحتوي هذا القالب على ${selectedTemplate.customFields.length} حقل مخصص. الرجاء ملء البيانات التالية:`}
+									type="info"
+									showIcon
+									className="mb-4"
+								/>
+								{selectedTemplate.customFields.map((field) => (
+									<Form.Item
+										key={field.name}
+										label={field.label}
+										name={`customField_${field.name}`}
+										rules={[
+											{
+												required: true,
+												message: `الرجاء إدخال ${field.label}`,
+											},
+										]}
+									>
+										{field.type === "number" ? (
+											<Input
+												type="number"
+												onChange={(e) =>
+													setFormData({
+														...formData,
+														[field.name]: field.type === "number" ? parseFloat(e.target.value) : e.target.value,
+													} as any)
+												}
+											/>
+										) : (
+											<Input
+												onChange={(e) =>
+													setFormData({
+														...formData,
+														[field.name]: e.target.value,
+													} as any)
+												}
+											/>
+										)}
+									</Form.Item>
+								))}
+							</>
+						)
+					})()}
+				</>
 			)}
 
 			{/* Image upload for league theme */}
