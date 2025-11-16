@@ -18,6 +18,8 @@ export interface CustomTemplate {
 	htmlCode: string // HTML with text that will be mapped
 	fieldMappings: Record<string, string> // text → field name mapping
 	customFields: CustomField[] // Additional fields beyond standard formData
+	originalWidth?: number // Original Figma frame width in pixels
+	originalHeight?: number // Original Figma frame height in pixels
 	previewImage?: string
 	createdAt: string
 }
@@ -93,9 +95,51 @@ const CustomTemplateRenderer: React.FC<CustomTemplateRendererProps> = ({
 		}
 	}, [template, formData])
 
+	// Calculate scaling if original dimensions are provided
+	const scaleStyle = useMemo(() => {
+		if (!template.originalWidth || !template.originalHeight) {
+			return {}
+		}
+
+		// A4 page content area (excluding padding)
+		// Page: 210mm x 297mm
+		// Padding: 42px inline, 120px top/bottom
+		// Converting to pixels at 96dpi: 1mm ≈ 3.7795px
+		const pageWidthPx = 210 * 3.7795 // ≈ 794px
+		const pageHeightPx = 297 * 3.7795 // ≈ 1123px
+		const paddingInlinePx = 42
+		const paddingVerticalPx = 120
+
+		const availableWidth = pageWidthPx - (paddingInlinePx * 2)
+		const availableHeight = pageHeightPx - (paddingVerticalPx * 2)
+
+		// Calculate scale factors for width and height
+		const scaleX = availableWidth / template.originalWidth
+		const scaleY = availableHeight / template.originalHeight
+
+		// Use the smaller scale to ensure it fits in both dimensions
+		const scale = Math.min(scaleX, scaleY, 1) // Don't scale up, only down
+
+		console.log("📐 Scaling calculation:")
+		console.log(`   Original: ${template.originalWidth}px × ${template.originalHeight}px`)
+		console.log(`   Available: ${availableWidth.toFixed(0)}px × ${availableHeight.toFixed(0)}px`)
+		console.log(`   Scale: ${scale.toFixed(3)}`)
+
+		return {
+			width: `${template.originalWidth}px`,
+			height: `${template.originalHeight}px`,
+			transform: `scale(${scale})`,
+			transformOrigin: 'top right', // RTL, so anchor to top right
+		}
+	}, [template.originalWidth, template.originalHeight])
+
 	return (
 		<div className="page font-8-sans text-[14pt] font-light" dir="rtl">
-			<div dangerouslySetInnerHTML={{ __html: renderedHTML }} />
+			<div
+				className="figma-content"
+				style={scaleStyle}
+				dangerouslySetInnerHTML={{ __html: renderedHTML }}
+			/>
 			<PageFooter />
 		</div>
 	)

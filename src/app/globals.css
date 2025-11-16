@@ -133,12 +133,11 @@ label.eight-form-item-required::before {
 
 /* Custom template rendering fixes for Figma HTML */
 .page .figma-content {
-	/* Reset absolute positioning from Figma */
-	position: relative !important;
-	/* Ensure content fits within page */
-	max-width: 100%;
-	/* Maintain aspect ratio if needed */
-	height: auto;
+	/* Container for scaled Figma content */
+	position: relative;
+	display: inline-block;
+	/* Preserve positioning and dimensions for scaling */
+	overflow: visible;
 }
 
 .selected-row td {

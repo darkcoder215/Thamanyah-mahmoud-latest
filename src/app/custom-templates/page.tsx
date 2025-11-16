@@ -41,6 +41,8 @@ const CustomTemplates: React.FC = () => {
 	const [formName, setFormName] = useState("")
 	const [formDescription, setFormDescription] = useState("")
 	const [formHtmlCode, setFormHtmlCode] = useState("")
+	const [originalWidth, setOriginalWidth] = useState<number>(0)
+	const [originalHeight, setOriginalHeight] = useState<number>(0)
 
 	// Step 2: Text mapping
 	const [detectedTexts, setDetectedTexts] = useState<string[]>([])
@@ -68,6 +70,37 @@ const CustomTemplates: React.FC = () => {
 	const saveTemplates = (newTemplates: CustomTemplate[]) => {
 		localStorage.setItem("customTemplates", JSON.stringify(newTemplates))
 		setTemplates(newTemplates)
+	}
+
+	// Auto-detect dimensions from HTML
+	const detectDimensions = (html: string): { width: number; height: number } | null => {
+		try {
+			const parser = new DOMParser()
+			const doc = parser.parseFromString(html, 'text/html')
+			const firstDiv = doc.body.querySelector('div')
+
+			if (firstDiv) {
+				const style = firstDiv.getAttribute('style') || ''
+
+				// Try to extract width and height from inline styles
+				const widthMatch = style.match(/width:\s*(\d+(?:\.\d+)?)(px|mm)?/)
+				const heightMatch = style.match(/height:\s*(\d+(?:\.\d+)?)(px|mm)?/)
+
+				if (widthMatch && heightMatch) {
+					let width = parseFloat(widthMatch[1])
+					let height = parseFloat(heightMatch[1])
+
+					// Convert mm to px if needed (1mm ≈ 3.7795px at 96dpi)
+					if (widthMatch[2] === 'mm') width = width * 3.7795
+					if (heightMatch[2] === 'mm') height = height * 3.7795
+
+					return { width: Math.round(width), height: Math.round(height) }
+				}
+			}
+		} catch (error) {
+			console.error("Error detecting dimensions:", error)
+		}
+		return null
 	}
 
 	// Extract text from HTML
@@ -137,6 +170,22 @@ const CustomTemplates: React.FC = () => {
 		return null
 	}
 
+	const handleAutoDetectDimensions = () => {
+		if (!formHtmlCode.trim()) {
+			message.warning("الرجاء إدخال كود HTML أولاً")
+			return
+		}
+
+		const detected = detectDimensions(formHtmlCode)
+		if (detected) {
+			setOriginalWidth(detected.width)
+			setOriginalHeight(detected.height)
+			message.success(`تم اكتشاف الأبعاد: ${detected.width}px × ${detected.height}px`)
+		} else {
+			message.warning("لم يتم العثور على أبعاد في الكود. الرجاء إدخالها يدوياً.")
+		}
+	}
+
 	const handleStep1Next = () => {
 		if (!formName.trim()) {
 			message.error("الرجاء إدخال اسم القالب")
@@ -145,6 +194,16 @@ const CustomTemplates: React.FC = () => {
 		if (!formHtmlCode.trim()) {
 			message.error("الرجاء إدخال كود HTML")
 			return
+		}
+
+		// Auto-detect dimensions if not provided
+		if (!originalWidth || !originalHeight) {
+			const detected = detectDimensions(formHtmlCode)
+			if (detected) {
+				setOriginalWidth(detected.width)
+				setOriginalHeight(detected.height)
+				console.log(`📐 Auto-detected dimensions: ${detected.width}px × ${detected.height}px`)
+			}
 		}
 
 		// Extract text and auto-suggest mappings
@@ -217,6 +276,8 @@ const CustomTemplates: React.FC = () => {
 			htmlCode: formHtmlCode,
 			fieldMappings,
 			customFields,
+			originalWidth: originalWidth || undefined,
+			originalHeight: originalHeight || undefined,
 			createdAt: editingTemplate?.createdAt || new Date().toISOString(),
 		}
 
@@ -251,6 +312,8 @@ const CustomTemplates: React.FC = () => {
 		setFormName(template.name)
 		setFormDescription(template.description)
 		setFormHtmlCode(template.htmlCode)
+		setOriginalWidth(template.originalWidth || 0)
+		setOriginalHeight(template.originalHeight || 0)
 		setFieldMappings(template.fieldMappings || {})
 		setCustomFields(template.customFields || [])
 		setCurrentStep(0)
@@ -263,6 +326,8 @@ const CustomTemplates: React.FC = () => {
 		setFormName("")
 		setFormDescription("")
 		setFormHtmlCode("")
+		setOriginalWidth(0)
+		setOriginalHeight(0)
 		setFieldMappings({})
 		setCustomFields([])
 		setDetectedTexts([])
@@ -468,6 +533,69 @@ const CustomTemplates: React.FC = () => {
 							</p>
 						</div>
 
+						<div>
+							<label className="mb-2 block text-sm font-medium">أبعاد الإطار الأصلي (بالبكسل)</label>
+							<div className="rounded bg-blue-50 p-3 text-xs text-blue-800">
+								<strong>💡 لماذا نحتاج الأبعاد؟</strong>
+								<p className="mt-1">
+									Figma يستخدم تحديد موضع مطلق (absolute positioning) بناءً على أبعاد الإطار الأصلي.
+									لتحقيق عرض دقيق، نحتاج لمعرفة هذه الأبعاد حتى نقوم بالتحجيم الصحيح.
+								</p>
+								<div className="mt-2 rounded bg-blue-100 p-2">
+									<strong>📏 كيف تحصل على الأبعاد من Figma:</strong>
+									<ol className="mt-1 list-inside list-decimal space-y-0.5">
+										<li>حدد الإطار (Frame) في Figma</li>
+										<li>انظر إلى لوحة Design في الجانب الأيمن</li>
+										<li>ستجد W (Width) و H (Height)</li>
+										<li>أدخل هذه القيم هنا (سيتم التحويل تلقائياً إذا لزم الأمر)</li>
+									</ol>
+								</div>
+							</div>
+							<div className="mt-3 grid gap-3 md:grid-cols-2">
+								<div>
+									<label className="mb-1 block text-xs font-medium">العرض (Width) بالبكسل</label>
+									<Input
+										type="number"
+										value={originalWidth || ""}
+										onChange={(e) => setOriginalWidth(parseInt(e.target.value) || 0)}
+										placeholder="مثال: 794"
+										size="large"
+										min={0}
+									/>
+									<p className="mt-1 text-xs text-gray-500">
+										A4 width ≈ 794px (210mm)
+									</p>
+								</div>
+								<div>
+									<label className="mb-1 block text-xs font-medium">الارتفاع (Height) بالبكسل</label>
+									<Input
+										type="number"
+										value={originalHeight || ""}
+										onChange={(e) => setOriginalHeight(parseInt(e.target.value) || 0)}
+										placeholder="مثال: 1123"
+										size="large"
+										min={0}
+									/>
+									<p className="mt-1 text-xs text-gray-500">
+										A4 height ≈ 1123px (297mm)
+									</p>
+								</div>
+							</div>
+							<Button
+								type="dashed"
+								onClick={handleAutoDetectDimensions}
+								size="small"
+								className="mt-2"
+							>
+								🔍 محاولة الكشف التلقائي من الكود
+							</Button>
+							{originalWidth > 0 && originalHeight > 0 && (
+								<div className="mt-2 rounded bg-green-50 p-2 text-xs text-green-800">
+									✅ الأبعاد: {originalWidth}px × {originalHeight}px
+								</div>
+							)}
+						</div>
+
 						<div className="flex justify-end gap-2">
 							<Button onClick={handleCloseModal}>إلغاء</Button>
 							<Button type="primary" icon={<ArrowLeftOutlined />} onClick={handleStep1Next}>
@@ -627,12 +755,42 @@ const CustomTemplates: React.FC = () => {
 
 						<div>
 							<div className="mb-2 text-sm font-medium">معاينة مرئية:</div>
+							{originalWidth > 0 && originalHeight > 0 && (
+								<div className="mb-2 rounded bg-purple-50 p-2 text-xs text-purple-800">
+									📐 سيتم عرض القالب بأبعاد {originalWidth}px × {originalHeight}px مع التحجيم التلقائي ليناسب صفحة A4
+								</div>
+							)}
 							<div className="overflow-auto rounded border-2 border-blue-500 bg-white" style={{ maxHeight: "800px" }}>
-								<div
-									className="page font-8-sans text-[14pt] font-light"
-									dir="rtl"
-									dangerouslySetInnerHTML={{ __html: generatePreviewHTML() }}
-								/>
+								<div className="page font-8-sans text-[14pt] font-light" dir="rtl">
+									<div
+										className="figma-content"
+										style={(() => {
+											if (!originalWidth || !originalHeight) {
+												return {}
+											}
+
+											const pageWidthPx = 210 * 3.7795
+											const pageHeightPx = 297 * 3.7795
+											const paddingInlinePx = 42
+											const paddingVerticalPx = 120
+
+											const availableWidth = pageWidthPx - (paddingInlinePx * 2)
+											const availableHeight = pageHeightPx - (paddingVerticalPx * 2)
+
+											const scaleX = availableWidth / originalWidth
+											const scaleY = availableHeight / originalHeight
+											const scale = Math.min(scaleX, scaleY, 1)
+
+											return {
+												width: `${originalWidth}px`,
+												height: `${originalHeight}px`,
+												transform: `scale(${scale})`,
+												transformOrigin: 'top right',
+											}
+										})()}
+										dangerouslySetInnerHTML={{ __html: generatePreviewHTML() }}
+									/>
+								</div>
 							</div>
 						</div>
 
@@ -651,6 +809,9 @@ const CustomTemplates: React.FC = () => {
 								<li>{Object.keys(fieldMappings).length} نص مربوط بحقول البيانات</li>
 								<li>{customFields.length} حقل مخصص جديد</li>
 								<li>{detectedTexts.length - Object.keys(fieldMappings).length} نص غير مربوط (سيبقى كما هو)</li>
+								{originalWidth > 0 && originalHeight > 0 && (
+									<li>الأبعاد الأصلية: {originalWidth}px × {originalHeight}px</li>
+								)}
 								<li>طول HTML النهائي: {generatePreviewHTML().length} حرف</li>
 							</ul>
 						</div>
