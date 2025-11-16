@@ -12,13 +12,9 @@ export default function SalaryPageV2({ formData }: { formData: JobOfferFormData 
 
 	return (
 		<div
-			className="page font-8-sans"
+			className="page-v2 font-8-sans"
 			style={{
-				width: '100%',
-				height: '100%',
-				position: 'relative',
-				background: '#F2EEE4',
-				overflow: 'hidden'
+				background: '#F2EEE4'
 			}}
 		>
 			{/* Benefits heading */}

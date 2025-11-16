@@ -16,8 +16,8 @@ export default function CoverPageV2({ name }: CoverPageV2Props) {
 
 	return (
 		<div
-			className="page mb-4 flex flex-col justify-center border-0! bg-black! print:bg-black!"
-			style={{ background: 'black', overflow: 'hidden', position: 'relative' }}
+			className="page-v2 mb-4 border-0! bg-black! print:bg-black!"
+			style={{ background: 'black' }}
 		>
 			{/* Thmanyah Logo */}
 			<div style={{ position: 'absolute', left: 195, top: 379 }}>
