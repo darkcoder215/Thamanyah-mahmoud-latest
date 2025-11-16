@@ -1,9 +1,10 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { Button, Card, Input, message, Modal, Steps, Select, Form, Tag, Space, Divider } from "antd"
-import { PlusOutlined, EditOutlined, DeleteOutlined, ArrowRightOutlined, ArrowLeftOutlined } from "@ant-design/icons"
+import { Button, Card, Input, message, Modal, Steps, Select, Form, Tag, Space, Divider, Tabs } from "antd"
+import { PlusOutlined, EditOutlined, DeleteOutlined, ArrowRightOutlined, ArrowLeftOutlined, CodeOutlined, Html5Outlined } from "@ant-design/icons"
 import { CustomTemplate, CustomField } from "@/components/JobOffer/CustomTemplateRenderer"
+import TailwindTemplateBuilder from "@/components/CustomTemplates/TailwindTemplateBuilder"
 
 const { TextArea } = Input
 const { Step } = Steps
@@ -381,8 +382,33 @@ const CustomTemplates: React.FC = () => {
 		<div className="mx-auto max-w-6xl p-6">
 			<div className="mb-6 flex items-center justify-between">
 				<h1 className="text-2xl font-bold">القوالب المخصصة</h1>
-				<Button
-					type="primary"
+			</div>
+
+			<Tabs
+				defaultActiveKey="tailwind"
+				size="large"
+				items={[
+					{
+						key: "tailwind",
+						label: (
+							<span>
+								<CodeOutlined /> Tailwind JSX (Recommended)
+							</span>
+						),
+						children: <TailwindTemplateBuilder />,
+					},
+					{
+						key: "html",
+						label: (
+							<span>
+								<Html5Outlined /> HTML Builder (Legacy)
+							</span>
+						),
+						children: (
+							<div>
+								<div className="mb-6 flex items-center justify-between">
+									<Button
+										type="primary"
 					icon={<PlusOutlined />}
 					onClick={() => setIsModalOpen(true)}
 					size="large"
@@ -827,6 +853,11 @@ const CustomTemplates: React.FC = () => {
 					</div>
 				)}
 			</Modal>
+							</div>
+						),
+					},
+				]}
+			/>
 		</div>
 	)
 }
