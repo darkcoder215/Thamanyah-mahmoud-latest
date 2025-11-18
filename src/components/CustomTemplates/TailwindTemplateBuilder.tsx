@@ -1,9 +1,10 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import { Input, Button, Upload, message, Steps, Card, Select, InputNumber, Space, Tag, Divider } from "antd"
-import { UploadOutlined, PlusOutlined, DeleteOutlined } from "@ant-design/icons"
-import type { UploadFile } from "antd"
+import { UploadOutlined, PlusOutlined, DeleteOutlined, FilePdfOutlined } from "@ant-design/icons"
+import html2canvas from "html2canvas"
+import { jsPDF } from "jspdf"
 
 const { TextArea } = Input
 
@@ -68,6 +69,62 @@ export default function TailwindTemplateBuilder() {
 
 	// Step 5: Template info
 	const [templateName, setTemplateName] = useState("")
+
+	// Ref for PDF export
+	const previewRef = useRef<HTMLDivElement>(null)
+
+	// Download as PDF
+	const downloadPDF = async () => {
+		if (!previewRef.current) {
+			message.error("لا يمكن العثور على المعاينة")
+			return
+		}
+
+		try {
+			message.loading({ content: "جاري إنشاء ملف PDF...", key: "pdf" })
+
+			const canvas = await html2canvas(previewRef.current, {
+				scale: 2,
+				useCORS: true,
+				allowTaint: true,
+				backgroundColor: "#ffffff",
+			})
+
+			const imgData = canvas.toDataURL("image/png")
+
+			// A4 dimensions in mm
+			const pdf = new jsPDF({
+				orientation: "portrait",
+				unit: "mm",
+				format: "a4",
+			})
+
+			const pdfWidth = pdf.internal.pageSize.getWidth()
+			const pdfHeight = pdf.internal.pageSize.getHeight()
+
+			// Calculate scaling to fit A4
+			const imgWidth = canvas.width
+			const imgHeight = canvas.height
+			const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight)
+
+			const finalWidth = imgWidth * ratio
+			const finalHeight = imgHeight * ratio
+
+			// Center the image
+			const x = (pdfWidth - finalWidth) / 2
+			const y = (pdfHeight - finalHeight) / 2
+
+			pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight)
+
+			const fileName = templateName.trim() || "template"
+			pdf.save(`${fileName}.pdf`)
+
+			message.success({ content: "تم تحميل ملف PDF بنجاح!", key: "pdf" })
+		} catch (error) {
+			console.error("PDF generation error:", error)
+			message.error({ content: "حدث خطأ أثناء إنشاء ملف PDF", key: "pdf" })
+		}
+	}
 
 	// Parse text styles from Figma format
 	const parseTextStyles = () => {
@@ -880,6 +937,62 @@ F2EEE4; // بيج`}
 						</ul>
 					</div>
 
+					{/* Preview with background and text elements */}
+					{backgroundPages.length > 0 && (
+						<div style={{ marginBottom: 24 }}>
+							<Divider>معاينة القالب</Divider>
+							<div
+								ref={previewRef}
+								style={{
+									width: 595,
+									height: 842,
+									position: 'relative',
+									margin: '0 auto',
+									border: '2px solid #1890ff',
+									borderRadius: 8,
+									overflow: 'hidden',
+									backgroundColor: '#fff',
+								}}
+							>
+								{/* Background image */}
+								<img
+									src={backgroundPages[0]?.imageUrl}
+									alt="خلفية"
+									style={{
+										width: '100%',
+										height: '100%',
+										objectFit: 'cover',
+										position: 'absolute',
+										top: 0,
+										left: 0,
+									}}
+								/>
+								{/* Text elements overlay */}
+								{textElements.map(el => {
+									const style = textStyles[el.styleIndex]
+									const classes = style?.classes.join(" ") || ""
+									return (
+										<div
+											key={el.id}
+											className={classes
+												.replace(/font-\['Thmanyah_sans[^']*'\]/g, "font-8-sans")
+												.replace(/font-\['Thmanyah_serif_display[^']*'\]/g, "font-8-display")
+												.replace(/font-\['Thmanyah_serif[^']*'\]/g, "font-8-serif")
+											}
+											style={{
+												position: 'absolute',
+												left: el.x,
+												top: el.y,
+											}}
+										>
+											{el.mappedField ? `[${availableFields.find(f => f.value === el.mappedField)?.label || el.mappedField}]` : el.content}
+										</div>
+									)
+								})}
+							</div>
+						</div>
+					)}
+
 					<Space>
 						<Button onClick={() => setCurrentStep(importMode === "jsx" ? 2 : 4)}>← السابق</Button>
 						<Button
@@ -889,6 +1002,15 @@ F2EEE4; // بيج`}
 							disabled={!templateName.trim()}
 						>
 							💾 حفظ وتصدير الكود
+						</Button>
+						<Button
+							icon={<FilePdfOutlined />}
+							size="large"
+							onClick={downloadPDF}
+							disabled={backgroundPages.length === 0}
+							style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f', color: '#fff' }}
+						>
+							تحميل PDF
 						</Button>
 					</Space>
 				</Card>
