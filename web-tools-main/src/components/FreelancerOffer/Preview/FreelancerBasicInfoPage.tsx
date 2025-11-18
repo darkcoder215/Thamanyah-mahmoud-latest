@@ -71,8 +71,8 @@ export default function FreelancerBasicInfoPage({
 					6731 طريق أبي بك الصديق، حي النرجس ، الرياض
 				</div>
 			</div>
-			<div className="flex gap-x-[50px]">
-				<div className="w-[116px]">
+			<div className="flex gap-x-[13mm]">
+				<div className="w-[31mm]">
 					<Image
 						src="/logo-black.png"
 						alt="logo"
@@ -81,7 +81,7 @@ export default function FreelancerBasicInfoPage({
 						className="h-auto"
 					/>
 				</div>
-				<div className="grid flex-1 grid-cols-2 gap-x-[20px] leading-[1.6]">
+				<div className="grid flex-1 grid-cols-2 gap-x-[5mm] leading-[1.6]">
 					<div>
 						<h1 className="font-8-display mb-9 text-[27pt] font-bold">
 							اتفاقية إنجاز عمل

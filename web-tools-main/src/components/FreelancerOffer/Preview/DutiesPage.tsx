@@ -34,8 +34,8 @@ export default function DutiesPage({ formData }: { formData: FreelancerOfferForm
 					6731 طريق أبي بك الصديق، حي النرجس ، الرياض
 				</div>
 			</div>
-			<div className="flex h-full gap-x-[50px]">
-				<div className="w-[116px]">
+			<div className="flex h-full gap-x-[13mm]">
+				<div className="w-[31mm]">
 					<Image
 						src="/logo-black.png"
 						alt="logo"
@@ -44,7 +44,7 @@ export default function DutiesPage({ formData }: { formData: FreelancerOfferForm
 						className="h-auto"
 					/>
 				</div>
-				<div className="grid h-full flex-1 grid-cols-2 gap-x-[30px] leading-[1.6]">
+				<div className="grid h-full flex-1 grid-cols-2 gap-x-[8mm] leading-[1.6]">
 					<div className="flex flex-col justify-between">
 						<div>
 							<p className="mb-2 font-bold">ملحق مهام عمل الطرف الثاني الأساسية:</p>

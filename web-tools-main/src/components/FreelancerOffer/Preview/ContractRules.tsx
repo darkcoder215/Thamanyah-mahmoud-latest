@@ -14,8 +14,8 @@ export default function ContractRules() {
 					6731 طريق أبي بك الصديق، حي النرجس ، الرياض
 				</div>
 			</div>
-			<div className="flex gap-x-[50px]">
-				<div className="w-[116px]">
+			<div className="flex gap-x-[13mm]">
+				<div className="w-[31mm]">
 					<Image
 						src="/logo-black.png"
 						alt="logo"
@@ -24,7 +24,7 @@ export default function ContractRules() {
 						className="h-auto"
 					/>
 				</div>
-				<div className="grid flex-1 grid-cols-2 gap-x-[30px] leading-[1.6]">
+				<div className="grid flex-1 grid-cols-2 gap-x-[8mm] leading-[1.6]">
 					<div>
 						<p className="mb-2">
 							أي مرحلة من مراحل العمل، وله كامل الحق في تقدير ما يستحقه الطرف الثاني
