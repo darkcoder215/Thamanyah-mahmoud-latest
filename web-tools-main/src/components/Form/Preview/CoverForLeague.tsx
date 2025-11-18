@@ -46,7 +46,7 @@ export default function CoverForLeague({
 									: name}
 							</h2>
 						</div>
-						<footer className="absolute right-0 bottom-[55px] flex w-[210mm] items-end justify-between px-[55px]">
+						<footer className="absolute right-0 bottom-[15mm] flex w-[210mm] items-end justify-between px-[11mm]">
 							<Image
 								src="/logo.png"
 								alt="logo"

@@ -44,12 +44,12 @@ label.eight-form-item-required::before {
 	width: 210mm;
 	--background: #f2eee4;
 	--foreground: #171717;
-	border-top: 18px solid var(--full-green);
+	border-top: 5mm solid var(--full-green);
 	background: var(--background);
 	color: var(--foreground);
-	padding-top: 120px;
-	padding-bottom: 120px;
-	padding-inline: 42px;
+	padding-top: 32mm;
+	padding-bottom: 32mm;
+	padding-inline: 11mm;
 	margin-bottom: 1rem;
 	overflow-y: hidden;
 	position: relative;
@@ -64,10 +64,10 @@ label.eight-form-item-required::before {
 	--foreground: #171717;
 	background-color: var(--background);
 	color: var(--foreground);
-	padding-top: 175px;
-	padding-bottom: 175px;
-	padding-inline-start: 44px;
-	padding-inline-end: 33px;
+	padding-top: 46mm;
+	padding-bottom: 46mm;
+	padding-inline-start: 12mm;
+	padding-inline-end: 9mm;
 	margin-bottom: 1rem;
 	overflow-y: hidden;
 	position: relative;
@@ -80,15 +80,14 @@ label.eight-form-item-required::before {
 
 	.page-2,
 	.page {
-		/* size: landscape; */
-		outline: 1px solid #000;
 		border: 0;
 		--background: #f2eee4;
 		--foreground: #171717;
-		/* background-color: #f2eee4 !important; */
-		/* color: #000 !important; */
 		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
 		margin: 0;
+		page-break-after: always;
+		page-break-inside: avoid;
 	}
 
 	.p-5,
@@ -97,13 +96,15 @@ label.eight-form-item-required::before {
 	}
 
 	@page {
-		/* size: landscape; */
 		size: A4;
-		border: 0;
-		/* --background: #f2eee4;
-		--foreground: #171717; */
-		-webkit-print-color-adjust: exact;
 		margin: 0;
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
+
+	* {
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
 	}
 }
 

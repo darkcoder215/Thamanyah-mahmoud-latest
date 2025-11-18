@@ -26,7 +26,7 @@ export default function DutiesPage({ formData }: { formData: FreelancerOfferForm
 	return (
 		<div className="page-2 font-8-serif text-[12pt] font-normal">
 			{/* Header with company info */}
-			<div className="absolute top-4 flex gap-x-[60px]">
+			<div className="absolute top-[4mm] flex gap-x-[16mm]">
 				<div className="font-8-display text-[10px] font-medium">
 					شركة ثمانية للنشر والتوزيع
 				</div>

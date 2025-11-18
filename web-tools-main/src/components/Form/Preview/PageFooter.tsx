@@ -18,7 +18,7 @@ export default function PageFooter({
 	}
 
 	return (
-		<footer className="absolute right-0 bottom-[55px] flex w-[210mm] items-end justify-between px-[55px]">
+		<footer className="absolute right-0 bottom-[15mm] flex w-[210mm] items-end justify-between px-[11mm]">
 			<p className="font-8-sans text-center text-sm font-light">
 				{showToday && formatToday()}
 				{freelancer && (
