@@ -2,6 +2,9 @@ import ManageAdvertisers from "../../components/manage-advertisers/ManageAdverti
 import { getInitialData } from "../../components/manage-advertisers/lib/api"
 import { getSpreadsheetData } from "../actions/spreadsheet"
 
+// Force dynamic rendering to avoid build-time data fetching
+export const dynamic = "force-dynamic"
+
 const id = process.env.NEXT_PUBLIC_POSTS_SPREADSHEET_ID
 const range = process.env.NEXT_PUBLIC_POSTS_SHEET_RANGE
 
