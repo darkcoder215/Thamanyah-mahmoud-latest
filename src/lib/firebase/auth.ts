@@ -6,7 +6,7 @@ import {
 	signInWithPopup,
 	signOut,
 } from "firebase/auth"
-import { auth } from "./firebaseConfig"
+import { auth as getAuth } from "./firebaseConfig"
 
 // Check if a user's email is from thmanyah.com domain
 export const isCompanyEmail = (email: string): boolean => {
@@ -33,6 +33,7 @@ export const signInWithGoogle = async (): Promise<{
 }> => {
 	try {
 		const provider = new GoogleAuthProvider()
+		const auth = getAuth()
 		const userCredential = await signInWithPopup(auth, provider)
 
 		// Check if email is from thmanyah.com domain
@@ -64,7 +65,7 @@ export const signOutUser = async (): Promise<{
 	error: string | null
 }> => {
 	try {
-		await signOut(auth)
+		await signOut(getAuth())
 		return { success: true, error: null }
 	} catch (error: unknown) {
 		const authError = error as AuthError
@@ -74,5 +75,5 @@ export const signOutUser = async (): Promise<{
 
 // Listen to auth state changes
 export const subscribeToAuthChanges = (callback: (user: User | null) => void) => {
-	return onAuthStateChanged(auth, callback)
+	return onAuthStateChanged(getAuth(), callback)
 }

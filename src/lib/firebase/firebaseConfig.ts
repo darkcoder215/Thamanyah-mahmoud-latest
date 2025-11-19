@@ -1,6 +1,6 @@
 // Firebase configuration file
-import { getApp, getApps, initializeApp } from "firebase/app"
-import { getAuth } from "firebase/auth"
+import { getApp, getApps, initializeApp, FirebaseApp } from "firebase/app"
+import { getAuth, Auth } from "firebase/auth"
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -12,8 +12,22 @@ const firebaseConfig = {
 	appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
-const auth = getAuth(app)
+// Lazy initialization to avoid build-time errors
+let app: FirebaseApp | undefined
+let auth: Auth | undefined
 
-export { app, auth }
+function getFirebaseApp() {
+	if (!app) {
+		app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
+	}
+	return app
+}
+
+function getFirebaseAuth() {
+	if (!auth) {
+		auth = getAuth(getFirebaseApp())
+	}
+	return auth
+}
+
+export { getFirebaseApp as app, getFirebaseAuth as auth }
