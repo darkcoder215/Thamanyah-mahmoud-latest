@@ -1,12 +1,16 @@
 import { createClient } from "@supabase/supabase-js"
 import { getAdvertisers, getPosts } from "@/components/manage-advertisers/lib/queries"
 
-const supabase = createClient(
-	process.env.NEXT_PUBLIC_SUPABASE_URL!,
-	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-)
+// Lazy initialization to avoid build-time errors
+function getSupabaseClient() {
+	return createClient(
+		process.env.NEXT_PUBLIC_SUPABASE_URL!,
+		process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+	)
+}
 
 export async function getInitialData() {
+	const supabase = getSupabaseClient()
 	const [postsResult, advertisersResult] = await Promise.all([
 		getPosts(supabase),
 		getAdvertisers(supabase),
