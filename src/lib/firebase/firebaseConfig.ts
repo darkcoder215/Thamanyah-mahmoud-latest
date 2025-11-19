@@ -18,6 +18,10 @@ let auth: Auth | undefined
 
 function getFirebaseApp() {
 	if (!app) {
+		// Only initialize if API key is available
+		if (!firebaseConfig.apiKey) {
+			throw new Error("Firebase API key is not configured. Please set NEXT_PUBLIC_FIREBASE_API_KEY environment variable.")
+		}
 		app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
 	}
 	return app

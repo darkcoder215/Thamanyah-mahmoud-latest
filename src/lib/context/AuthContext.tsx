@@ -29,6 +29,12 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 	const [error, setError] = useState<string | null>(null)
 
 	useEffect(() => {
+		// Skip Firebase initialization if API key is not configured
+		if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+			setLoading(false)
+			return
+		}
+
 		const unsubscribe = subscribeToAuthChanges((user) => {
 			setUser(user)
 			setLoading(false)
